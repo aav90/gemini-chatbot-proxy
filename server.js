@@ -13,7 +13,8 @@ const app = express();
 app.use(express.json());
 
 // Allow only your site for the API calls
-app.use(cors({ origin: 'https://learniamo.com' }));
+app.use(cors({ origin: ['https://learniamo.com', 'https://www.learniamo.com'] }));
+
 
 
 // --- NEW CODE START ---
