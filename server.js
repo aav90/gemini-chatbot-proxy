@@ -1,12 +1,31 @@
 import express from 'express';
 import cors from 'cors';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import path from 'path'; // Import the 'path' module
+import { fileURLToPath } from 'url'; // For ESM compatibility
+
+// ESM specific: get __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const app = express();
 app.use(express.json());
 
-// Allow only your site
+// Allow only your site for the API calls
 app.use(cors({ origin: 'https://learniamo.com' }));
+
+
+// --- NEW CODE START ---
+// Serve static files (like index.html) from the root directory
+app.use(express.static(__dirname));
+
+// Define a route for the root URL that sends the index.html file
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+// --- NEW CODE END ---
+
 
 app.post('/chat', async (req, res) => {
   try {
