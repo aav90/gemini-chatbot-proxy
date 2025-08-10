@@ -81,19 +81,26 @@
             background-color: #0056b3;
         }
 
+        /* --- CHANGE MADE HERE --- */
         .user-message {
             text-align: right;
-            color: #333;
+            color: white; /* Changed text color to white */
+            background-color: black; /* Added black background */
             margin-bottom: 8px;
-            word-break: break-word; /* Prevent long words from breaking layout */
+            word-break: break-word;
+            padding: 5px 10px; /* Added some padding for better appearance */
+            border-radius: 8px; /* Rounded corners for the message bubble */
+            align-self: flex-end; /* Make the bubble align to the right */
+            max-width: 80%; /* Limit bubble width */
         }
+        /* --- END CHANGE --- */
 
         .bot-message {
             text-align: left;
             color: #000;
             font-weight: bold;
             margin-bottom: 8px;
-            word-break: break-word; /* Prevent long words from breaking layout */
+            word-break: break-word;
         }
 
         /* --- Mobile Responsiveness (Media Queries) --- */
@@ -126,8 +133,8 @@
             }
 
             .message-input button {
-                min-width: 60px; /* Further adjust button width on very small screens */
-                padding: 8px 10px; /* Reduce padding for a more compact look */
+                min-width: 60px;
+                padding: 8px 10px;
             }
         }
     </style>
@@ -145,21 +152,18 @@
     <script>
         const messagesDiv = document.getElementById('messages');
         const userInput = document.getElementById('userInput');
-        const chatHistoryKey = 'chatHistory'; // Key for local storage
+        const chatHistoryKey = 'chatHistory';
 
-        // Load chat history from local storage
         let chatHistory = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
 
-        // Function to display chat history
         function displayChatHistory() {
-            messagesDiv.innerHTML = ''; // Clear existing messages
+            messagesDiv.innerHTML = '';
             chatHistory.forEach(message => {
                 addMessage(message.text, message.className);
             });
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Initial display of chat history
         displayChatHistory();
 
         async function sendMessage() {
@@ -167,7 +171,6 @@
             if (message === '') return;
 
             addMessage(message, 'user-message');
-            // Save user message to chat history
             chatHistory.push({ text: message, className: 'user-message' });
             localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
@@ -189,7 +192,6 @@
 
                 const data = await response.json();
                 addMessage(data.reply, 'bot-message');
-                // Save bot message to chat history
                 chatHistory.push({ text: data.reply, className: 'bot-message' });
                 localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
