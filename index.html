@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEARNIAMO Assistant</title>
     <style>
+        /* Universal Box Sizing */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         /* Basic Resets & Full Height Setup */
         html, body {
             margin: 0;
@@ -15,14 +20,14 @@
             display: flex;
             justify-content: center;
             align-items: center; /* Center vertically on desktop */
-            overflow: hidden; /* Prevent body scroll, manage scroll within chat */
+            /* Removed overflow: hidden from body, will let iframe manage */
         }
 
         /* Main Chat Container */
         .chat-container {
-            max-width: 600px;
-            width: 95%; /* Adjust width for responsiveness */
-            height: 95%; /* Allow it to take up most of the available height */
+            max-width: 600px; /* Max width for desktop */
+            width: 100%; /* Take full width of parent (iframe) */
+            height: 100%; /* Take full height of parent (iframe) */
             margin: 0 auto; /* Center horizontally */
             background: #fff;
             padding: 20px;
@@ -46,17 +51,16 @@
         .messages {
             border: 1px solid #ccc;
             padding: 10px;
-            flex-grow: 1; /* Allow messages div to take available space */
+            flex: 1; /* Shorthand for flex-grow: 1, flex-shrink: 1, flex-basis: 0% */
             overflow-y: auto; /* Enable vertical scrolling */
             margin-bottom: 15px;
             border-radius: 4px;
             background-color: #e9e9e9;
-            display: flex;
+            display: flex; /* Keep as flex to align messages */
             flex-direction: column;
             justify-content: flex-end; /* Keep new messages at the bottom */
-            min-height: 100px; /* Ensure a minimum height if no messages */
-            /* Added for better scrollbar appearance and to prevent content going under scrollbar */
-            padding-right: 5px; /* Adjust as needed */
+            min-height: 0; /* Allow it to shrink to 0 if needed before growing */
+            /* Removed padding-right here as it might contribute to horizontal scrollbar */
         }
 
         /* Message Input Section */
@@ -64,6 +68,7 @@
             display: flex;
             width: 100%;
             flex-shrink: 0; /* Prevent input from shrinking */
+            align-items: center; /* Vertically align input and button */
         }
 
         .message-input input {
@@ -73,7 +78,6 @@
             border-radius: 4px 0 0 4px;
             font-size: 1rem;
             min-width: 0; /* Allow input to properly shrink */
-            box-sizing: border-box;
         }
 
         .message-input button {
@@ -85,9 +89,9 @@
             cursor: pointer;
             font-size: 1rem;
             white-space: nowrap;
-            min-width: 80px;
+            flex-shrink: 0; /* Prevent button from shrinking */
+            min-width: 80px; /* Ensure button doesn't shrink too much */
             text-align: center;
-            box-sizing: border-box;
         }
 
         .message-input button:hover {
@@ -100,13 +104,12 @@
             color: white;
             background-color: black;
             margin-bottom: 8px;
-            word-break: break-word; /* Prevents long words from breaking layout */
-            padding: 8px 12px; /* Increased padding slightly */
-            border-radius: 15px; /* More rounded corners for bubble look */
-            align-self: flex-end; /* Align bubble to the right */
+            word-break: break-word;
+            padding: 8px 12px;
+            border-radius: 15px;
+            align-self: flex-end;
             max-width: 80%; /* Limit bubble width */
             line-height: 1.4;
-            position: relative; /* Needed for any future bubble arrows/tails */
         }
 
         /* Bot Message Styling */
@@ -117,48 +120,38 @@
             margin-bottom: 8px;
             word-break: break-word;
             line-height: 1.5;
-            padding: 8px 12px; /* Increased padding slightly */
-            border-radius: 15px; /* More rounded corners for bubble look */
-            background-color: #e0e0e0; /* Light gray background */
-            align-self: flex-start; /* Align bubble to the left */
-            max-width: 80%; /* Limit bubble width */
-            position: relative; /* Needed for any future bubble arrows/tails */
+            padding: 8px 12px;
+            border-radius: 15px;
+            background-color: #e0e0e0;
+            align-self: flex-start;
+            max-width: 80%;
         }
-        /* Styling for content within bot messages (from markdown parsing) */
         .bot-message p {
-            margin-bottom: 0.5em; /* Space between paragraphs */
+            margin-bottom: 0.5em;
             margin-top: 0;
         }
         .bot-message p:last-child {
             margin-bottom: 0;
         }
-        .bot-message strong, .bot-message em { /* Ensure bold/italic are visible */
-            color: inherit; /* Use parent color */
+        .bot-message strong, .bot-message em {
+            color: inherit;
         }
 
         /* --- Mobile Responsiveness (Media Queries) --- */
         @media (max-width: 768px) {
             html, body {
-                height: 100%; /* Ensure full height on mobile */
                 align-items: flex-start; /* Align content to top on mobile */
             }
             .chat-container {
-                width: 100%; /* Full width on mobile */
-                height: 100%; /* Full height on mobile */
-                margin: 0; /* No margin */
-                padding: 15px;
                 border-radius: 0; /* Remove border-radius for full screen */
                 box-shadow: none; /* Remove shadow */
+                padding: 15px; /* Adjust padding for mobile */
             }
 
             .message-input input,
             .message-input button {
                 padding: 10px;
                 font-size: 0.95rem;
-            }
-
-            .messages {
-                padding-right: 2px; /* Less padding on very small screens */
             }
             .user-message, .bot-message {
                 max-width: 90%; /* Allow messages to take more width on small screens */
@@ -183,14 +176,10 @@
 
         let chatHistory = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
 
-        // Basic Markdown to HTML converter
         function convertMarkdownToHtml(markdownText) {
-            // Convert bold (**text**) and italic (*text*)
             let html = markdownText
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em>$1</em>');
-            // Convert newlines to <br/> for basic paragraph breaks
-            // This is a common way to handle simple line breaks from text APIs
             html = html.replace(/\n/g, '<br/>');
             return html;
         }
@@ -204,7 +193,6 @@
                     addMessage(message.text, message.className, false);
                 }
             });
-            // Ensure scroll to bottom after displaying history
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
@@ -247,7 +235,6 @@
                 console.error('Error sending message:', error);
                 addMessage('Error: Could not get a response from the assistant. Please try again.', 'bot-message', false);
             }
-            // Always scroll to bottom after a new message
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
