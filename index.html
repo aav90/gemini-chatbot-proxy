@@ -73,27 +73,25 @@
             cursor: pointer;
             font-size: 1rem;
             white-space: nowrap;
-            min-width: 80px; /* Ensure button doesn't shrink too much */
-            text-align: center; /* Center the text */
+            min-width: 80px;
+            text-align: center;
         }
 
         .message-input button:hover {
             background-color: #0056b3;
         }
 
-        /* --- CHANGE MADE HERE --- */
         .user-message {
             text-align: right;
-            color: white; /* Changed text color to white */
-            background-color: black; /* Added black background */
+            color: white;
+            background-color: black;
             margin-bottom: 8px;
             word-break: break-word;
-            padding: 5px 10px; /* Added some padding for better appearance */
-            border-radius: 8px; /* Rounded corners for the message bubble */
-            align-self: flex-end; /* Make the bubble align to the right */
-            max-width: 80%; /* Limit bubble width */
+            padding: 5px 10px;
+            border-radius: 8px;
+            align-self: flex-end;
+            max-width: 80%;
         }
-        /* --- END CHANGE --- */
 
         .bot-message {
             text-align: left;
@@ -159,7 +157,13 @@
         function displayChatHistory() {
             messagesDiv.innerHTML = '';
             chatHistory.forEach(message => {
-                addMessage(message.text, message.className);
+                // IMPORTANT: For bot messages, use innerHTML to render basic HTML (like line breaks)
+                // For user messages, stick to textContent for security.
+                if (message.className === 'bot-message') {
+                    addMessage(message.text, message.className, true); // Pass true to indicate innerHTML
+                } else {
+                    addMessage(message.text, message.className, false); // Pass false for textContent
+                }
             });
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
@@ -170,7 +174,7 @@
             const message = userInput.value.trim();
             if (message === '') return;
 
-            addMessage(message, 'user-message');
+            addMessage(message, 'user-message', false); // User messages are always textContent
             chatHistory.push({ text: message, className: 'user-message' });
             localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
@@ -191,20 +195,28 @@
                 }
 
                 const data = await response.json();
-                addMessage(data.reply, 'bot-message');
-                chatHistory.push({ text: data.reply, className: 'bot-message' });
+                // For bot messages, we assume the reply might contain basic HTML/markdown.
+                // We'll replace newlines with <br/> for basic formatting.
+                const formattedReply = data.reply.replace(/\n/g, '<br/>');
+                addMessage(formattedReply, 'bot-message', true); // Use innerHTML for bot messages
+                chatHistory.push({ text: data.reply, className: 'bot-message' }); // Store original for consistency
                 localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
             } catch (error) {
                 console.error('Error sending message:', error);
-                addMessage('Error: Could not get a response from the assistant. Please try again.', 'bot-message');
+                addMessage('Error: Could not get a response from the assistant. Please try again.', 'bot-message', false);
             }
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        function addMessage(text, className) {
+        // Modified addMessage function to handle innerHTML
+        function addMessage(text, className, useInnerHTML = false) {
             const p = document.createElement('p');
-            p.textContent = text;
+            if (useInnerHTML) {
+                p.innerHTML = text; // Use innerHTML for rendering bot replies
+            } else {
+                p.textContent = text; // Use textContent for user input (safer)
+            }
             p.classList.add(className);
             messagesDiv.appendChild(p);
         }
