@@ -5,54 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEARNIAMO Assistant</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        /* Basic Resets & Full Height Setup */
+        html, body {
             margin: 0;
+            padding: 0;
+            height: 100%; /* Important for the chat container to fill space */
+            font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            align-items: center; /* Center vertically on desktop */
+            overflow: hidden; /* Prevent body scroll, manage scroll within chat */
         }
 
+        /* Main Chat Container */
         .chat-container {
             max-width: 600px;
-            width: 95%;
-            margin: 20px auto;
+            width: 95%; /* Adjust width for responsiveness */
+            height: 95%; /* Allow it to take up most of the available height */
+            margin: 0 auto; /* Center horizontally */
             background: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
-            min-height: 450px;
+            overflow: hidden; /* Crucial to prevent internal elements from overflowing */
         }
 
+        /* Title */
         h1 {
             text-align: center;
             color: #333;
             margin-top: 0;
             margin-bottom: 20px;
+            flex-shrink: 0; /* Prevent title from shrinking */
         }
 
+        /* Messages Display Area */
         .messages {
             border: 1px solid #ccc;
             padding: 10px;
-            flex-grow: 1;
-            min-height: 200px;
-            max-height: 500px;
-            overflow-y: auto;
+            flex-grow: 1; /* Allow messages div to take available space */
+            overflow-y: auto; /* Enable vertical scrolling */
             margin-bottom: 15px;
             border-radius: 4px;
             background-color: #e9e9e9;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: flex-end; /* Keep new messages at the bottom */
+            min-height: 100px; /* Ensure a minimum height if no messages */
+            /* Added for better scrollbar appearance and to prevent content going under scrollbar */
+            padding-right: 5px; /* Adjust as needed */
         }
 
+        /* Message Input Section */
         .message-input {
             display: flex;
             width: 100%;
+            flex-shrink: 0; /* Prevent input from shrinking */
         }
 
         .message-input input {
@@ -61,7 +72,8 @@
             border: 1px solid #ccc;
             border-radius: 4px 0 0 4px;
             font-size: 1rem;
-            min-width: 0;
+            min-width: 0; /* Allow input to properly shrink */
+            box-sizing: border-box;
         }
 
         .message-input button {
@@ -75,38 +87,68 @@
             white-space: nowrap;
             min-width: 80px;
             text-align: center;
+            box-sizing: border-box;
         }
 
         .message-input button:hover {
             background-color: #0056b3;
         }
 
+        /* User Message Styling */
         .user-message {
             text-align: right;
             color: white;
             background-color: black;
             margin-bottom: 8px;
-            word-break: break-word;
-            padding: 5px 10px;
-            border-radius: 8px;
-            align-self: flex-end;
-            max-width: 80%;
+            word-break: break-word; /* Prevents long words from breaking layout */
+            padding: 8px 12px; /* Increased padding slightly */
+            border-radius: 15px; /* More rounded corners for bubble look */
+            align-self: flex-end; /* Align bubble to the right */
+            max-width: 80%; /* Limit bubble width */
+            line-height: 1.4;
+            position: relative; /* Needed for any future bubble arrows/tails */
         }
 
+        /* Bot Message Styling */
         .bot-message {
             text-align: left;
             color: #000;
-            font-weight: bold;
+            font-weight: normal;
             margin-bottom: 8px;
             word-break: break-word;
+            line-height: 1.5;
+            padding: 8px 12px; /* Increased padding slightly */
+            border-radius: 15px; /* More rounded corners for bubble look */
+            background-color: #e0e0e0; /* Light gray background */
+            align-self: flex-start; /* Align bubble to the left */
+            max-width: 80%; /* Limit bubble width */
+            position: relative; /* Needed for any future bubble arrows/tails */
+        }
+        /* Styling for content within bot messages (from markdown parsing) */
+        .bot-message p {
+            margin-bottom: 0.5em; /* Space between paragraphs */
+            margin-top: 0;
+        }
+        .bot-message p:last-child {
+            margin-bottom: 0;
+        }
+        .bot-message strong, .bot-message em { /* Ensure bold/italic are visible */
+            color: inherit; /* Use parent color */
         }
 
         /* --- Mobile Responsiveness (Media Queries) --- */
         @media (max-width: 768px) {
+            html, body {
+                height: 100%; /* Ensure full height on mobile */
+                align-items: flex-start; /* Align content to top on mobile */
+            }
             .chat-container {
-                width: 98%;
-                margin: 10px auto;
+                width: 100%; /* Full width on mobile */
+                height: 100%; /* Full height on mobile */
+                margin: 0; /* No margin */
                 padding: 15px;
+                border-radius: 0; /* Remove border-radius for full screen */
+                box-shadow: none; /* Remove shadow */
             }
 
             .message-input input,
@@ -116,23 +158,10 @@
             }
 
             .messages {
-                min-height: 150px;
+                padding-right: 2px; /* Less padding on very small screens */
             }
-        }
-
-        @media (max-width: 480px) {
-            .chat-container {
-                border-radius: 0;
-                box-shadow: none;
-            }
-
-            body {
-                padding: 0;
-            }
-
-            .message-input button {
-                min-width: 60px;
-                padding: 8px 10px;
+            .user-message, .bot-message {
+                max-width: 90%; /* Allow messages to take more width on small screens */
             }
         }
     </style>
@@ -154,17 +183,28 @@
 
         let chatHistory = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
 
+        // Basic Markdown to HTML converter
+        function convertMarkdownToHtml(markdownText) {
+            // Convert bold (**text**) and italic (*text*)
+            let html = markdownText
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Convert newlines to <br/> for basic paragraph breaks
+            // This is a common way to handle simple line breaks from text APIs
+            html = html.replace(/\n/g, '<br/>');
+            return html;
+        }
+
         function displayChatHistory() {
             messagesDiv.innerHTML = '';
             chatHistory.forEach(message => {
-                // IMPORTANT: For bot messages, use innerHTML to render basic HTML (like line breaks)
-                // For user messages, stick to textContent for security.
                 if (message.className === 'bot-message') {
-                    addMessage(message.text, message.className, true); // Pass true to indicate innerHTML
+                    addMessage(convertMarkdownToHtml(message.text), message.className, true);
                 } else {
-                    addMessage(message.text, message.className, false); // Pass false for textContent
+                    addMessage(message.text, message.className, false);
                 }
             });
+            // Ensure scroll to bottom after displaying history
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
@@ -174,7 +214,7 @@
             const message = userInput.value.trim();
             if (message === '') return;
 
-            addMessage(message, 'user-message', false); // User messages are always textContent
+            addMessage(message, 'user-message', false);
             chatHistory.push({ text: message, className: 'user-message' });
             localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
@@ -195,30 +235,32 @@
                 }
 
                 const data = await response.json();
-                // For bot messages, we assume the reply might contain basic HTML/markdown.
-                // We'll replace newlines with <br/> for basic formatting.
-                const formattedReply = data.reply.replace(/\n/g, '<br/>');
-                addMessage(formattedReply, 'bot-message', true); // Use innerHTML for bot messages
-                chatHistory.push({ text: data.reply, className: 'bot-message' }); // Store original for consistency
+                const rawBotReply = data.reply;
+
+                const formattedBotReply = convertMarkdownToHtml(rawBotReply);
+                addMessage(formattedBotReply, 'bot-message', true);
+
+                chatHistory.push({ text: rawBotReply, className: 'bot-message' });
                 localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
             } catch (error) {
                 console.error('Error sending message:', error);
                 addMessage('Error: Could not get a response from the assistant. Please try again.', 'bot-message', false);
             }
+            // Always scroll to bottom after a new message
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Modified addMessage function to handle innerHTML
         function addMessage(text, className, useInnerHTML = false) {
-            const p = document.createElement('p');
+            const msgElement = document.createElement('div');
+            msgElement.classList.add(className);
+
             if (useInnerHTML) {
-                p.innerHTML = text; // Use innerHTML for rendering bot replies
+                msgElement.innerHTML = text;
             } else {
-                p.textContent = text; // Use textContent for user input (safer)
+                msgElement.textContent = text;
             }
-            p.classList.add(className);
-            messagesDiv.appendChild(p);
+            messagesDiv.appendChild(msgElement);
         }
     </script>
 </body>
