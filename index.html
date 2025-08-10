@@ -3,117 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LEARNIAMO Assistant</title> <!-- Changed title here -->
+    <title>LEARNIAMO Assistant</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0; /* Remove default body margin for better mobile fit */
+            margin: 0;
             background-color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Ensure it takes full viewport height */
+            min-height: 100vh;
         }
+
         .chat-container {
             max-width: 600px;
-            width: 95%; /* Adjust width for better mobile fit */
-            margin: 20px auto; /* Add margin for vertical spacing */
+            width: 95%;
+            margin: 20px auto;
             background: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
-            min-height: 450px; /* Give it a reasonable minimum height */
+            min-height: 450px;
         }
+
         h1 {
             text-align: center;
             color: #333;
-            margin-top: 0; /* Remove top margin */
+            margin-top: 0;
             margin-bottom: 20px;
         }
+
         .messages {
             border: 1px solid #ccc;
             padding: 10px;
-            flex-grow: 1; /* Allow messages area to expand */
-            min-height: 200px; /* Keep a minimum height */
-            max-height: 500px; /* Allow it to grow, but with a max */
+            flex-grow: 1;
+            min-height: 200px;
+            max-height: 500px;
             overflow-y: auto;
-            margin-bottom: 15px; /* Increased margin for better spacing */
+            margin-bottom: 15px;
             border-radius: 4px;
             background-color: #e9e9e9;
             display: flex;
-            flex-direction: column; /* Ensure messages stack */
-            justify-content: flex-end; /* Keep new messages at the bottom */
+            flex-direction: column;
+            justify-content: flex-end;
         }
+
         .message-input {
             display: flex;
-            width: 100%; /* Ensure it takes full width */
+            width: 100%;
         }
+
         .message-input input {
             flex-grow: 1;
-            padding: 12px; /* Increased padding for easier tapping */
+            padding: 12px;
             border: 1px solid #ccc;
             border-radius: 4px 0 0 4px;
-            font-size: 1rem; /* Make font size readable */
-            min-width: 0; /* Allow input to shrink on smaller screens */
+            font-size: 1rem;
+            min-width: 0;
         }
+
         .message-input button {
-            padding: 12px 20px; /* Increased padding for easier tapping */
+            padding: 12px 20px;
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 0 4px 4px 0;
             cursor: pointer;
-            font-size: 1rem; /* Make font size readable */
-            white-space: nowrap; /* Prevent button text from wrapping */
+            font-size: 1rem;
+            white-space: nowrap;
+            min-width: 80px; /* Ensure button doesn't shrink too much */
+            text-align: center; /* Center the text */
         }
+
         .message-input button:hover {
             background-color: #0056b3;
         }
+
         .user-message {
             text-align: right;
             color: #333;
-            margin-bottom: 8px; /* Slightly more space between messages */
+            margin-bottom: 8px;
+            word-break: break-word; /* Prevent long words from breaking layout */
         }
+
         .bot-message {
             text-align: left;
-            color: #000; /* Changed bot message color to black */
-            font-weight: bold; /* Made bot message bold */
-            margin-bottom: 8px; /* Slightly more space between messages */
+            color: #000;
+            font-weight: bold;
+            margin-bottom: 8px;
+            word-break: break-word; /* Prevent long words from breaking layout */
         }
 
         /* --- Mobile Responsiveness (Media Queries) --- */
-        @media (max-width: 768px) { /* Styles for screens smaller than 768px (e.g., tablets) */
+        @media (max-width: 768px) {
             .chat-container {
-                width: 98%; /* Take up almost full width on smaller screens */
-                margin: 10px auto; /* Reduce vertical margin */
+                width: 98%;
+                margin: 10px auto;
                 padding: 15px;
             }
+
             .message-input input,
             .message-input button {
-                padding: 10px; /* Slightly smaller padding on very small screens */
+                padding: 10px;
                 font-size: 0.95rem;
             }
+
             .messages {
-                min-height: 150px; /* Reduce min-height for more compact view on mobile */
+                min-height: 150px;
             }
         }
 
-        @media (max-width: 480px) { /* Styles for very small screens (e.g., phones) */
+        @media (max-width: 480px) {
             .chat-container {
-                border-radius: 0; /* Remove border-radius on very small screens for edge-to-edge look */
-                box-shadow: none; /* Remove shadow */
+                border-radius: 0;
+                box-shadow: none;
             }
+
             body {
-                padding: 0; /* Remove body padding */
+                padding: 0;
+            }
+
+            .message-input button {
+                min-width: 60px; /* Further adjust button width on very small screens */
+                padding: 8px 10px; /* Reduce padding for a more compact look */
             }
         }
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <h1>LEARNIAMO Assistant</h1> <!-- Changed H1 text here -->
+        <h1>LEARNIAMO Assistant</h1>
         <div class="messages" id="messages"></div>
         <div class="message-input">
             <input type="text" id="userInput" placeholder="Ask a language question..." onkeypress="if(event.keyCode === 13) sendMessage()">
@@ -124,16 +145,35 @@
     <script>
         const messagesDiv = document.getElementById('messages');
         const userInput = document.getElementById('userInput');
+        const chatHistoryKey = 'chatHistory'; // Key for local storage
+
+        // Load chat history from local storage
+        let chatHistory = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
+
+        // Function to display chat history
+        function displayChatHistory() {
+            messagesDiv.innerHTML = ''; // Clear existing messages
+            chatHistory.forEach(message => {
+                addMessage(message.text, message.className);
+            });
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom
+        }
+
+        // Initial display of chat history
+        displayChatHistory();
 
         async function sendMessage() {
             const message = userInput.value.trim();
             if (message === '') return;
 
             addMessage(message, 'user-message');
+            // Save user message to chat history
+            chatHistory.push({ text: message, className: 'user-message' });
+            localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
+
             userInput.value = '';
 
             try {
-                // IMPORTANT: Use the full URL of your Cloud Run service here
                 const response = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/chat', {
                     method: 'POST',
                     headers: {
@@ -149,12 +189,15 @@
 
                 const data = await response.json();
                 addMessage(data.reply, 'bot-message');
+                // Save bot message to chat history
+                chatHistory.push({ text: data.reply, className: 'bot-message' });
+                localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
             } catch (error) {
                 console.error('Error sending message:', error);
                 addMessage('Error: Could not get a response from the assistant. Please try again.', 'bot-message');
             }
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
         function addMessage(text, className) {
