@@ -14,27 +14,29 @@
         html, body {
             margin: 0;
             padding: 0;
-            height: 100%;
+            height: 100%; /* Important for the chat container to fill space */
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; /* Use flexbox to center content */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            /* Removed overflow: hidden from body, will let iframe manage */
         }
 
-        /* Main Chat Container - Adjusted for fixed message height */
+        /* Main Chat Container */
         .chat-container {
-            max-width: 600px;
-            width: 95%;
-            height: 95%; /* Still takes up most of iframe height */
-            margin: 0 auto;
+            max-width: 600px; /* Max width for desktop */
+            width: 95%; /* Responsive width */
+            height: 95vh; /* <--- CRITICAL CHANGE: Use viewport height for primary sizing */
+            /* For Google Sites embedding, sometimes 95vh is more reliable than 95% of parent */
+            margin: auto; /* Center horizontally and vertically if not flexed by body */
             background: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Important for overall container */
+            overflow: hidden; /* Ensure content within container respects its bounds */
         }
 
         /* Title */
@@ -46,11 +48,11 @@
             flex-shrink: 0; /* Prevent title from shrinking */
         }
 
-        /* Messages Display Area - CRITICAL CHANGES HERE */
+        /* Messages Display Area - Focused on reliable vertical fill and scroll */
         .messages {
             border: 1px solid #ccc;
             padding: 10px;
-            height: 300px; /* <--- NEW: Explicit fixed height for testing */
+            flex: 1; /* <-- CRITICAL: This is key for taking up remaining vertical space */
             overflow-y: auto; /* Enable vertical scrolling */
             margin-bottom: 15px;
             border-radius: 4px;
@@ -58,7 +60,7 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-end; /* Keep new messages at the bottom */
-            /* No flex-grow: 1 here now because we have a fixed height */
+            min-height: 0; /* Allow flex item to truly shrink when necessary */
         }
 
         /* Message Input Section */
@@ -138,9 +140,13 @@
         /* --- Mobile Responsiveness (Media Queries) --- */
         @media (max-width: 768px) {
             html, body {
+                /* On mobile, align to top, fill full viewport */
                 align-items: flex-start;
             }
             .chat-container {
+                width: 100%;
+                height: 100vh; /* <--- CRITICAL CHANGE: Full viewport height for mobile */
+                margin: 0; /* Remove margin on mobile */
                 border-radius: 0;
                 box-shadow: none;
                 padding: 15px;
