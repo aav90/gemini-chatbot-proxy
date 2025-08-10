@@ -20,15 +20,14 @@
             display: flex; /* Use flexbox to center content */
             justify-content: center; /* Center horizontally */
             align-items: center; /* Center vertically */
-            /* Removed overflow: hidden from body, will let iframe manage */
         }
 
         /* Main Chat Container */
         .chat-container {
             max-width: 600px; /* Max width for desktop */
             width: 95%; /* Responsive width */
-            height: 95vh; /* <--- CRITICAL CHANGE: Use viewport height for primary sizing */
-            /* For Google Sites embedding, sometimes 95vh is more reliable than 95% of parent */
+            /* Adjusted height to accommodate max-height of messages and other elements */
+            height: 90vh; /* Make it slightly smaller than 100vh to ensure space for overall centering on desktop */
             margin: auto; /* Center horizontally and vertically if not flexed by body */
             background: #fff;
             padding: 20px;
@@ -48,11 +47,13 @@
             flex-shrink: 0; /* Prevent title from shrinking */
         }
 
-        /* Messages Display Area - Focused on reliable vertical fill and scroll */
+        /* Messages Display Area - CRITICAL CHANGES FOR SCROLLING */
         .messages {
             border: 1px solid #ccc;
             padding: 10px;
-            flex: 1; /* <-- CRITICAL: This is key for taking up remaining vertical space */
+            /* Using max-height to force overflow and scrollbar */
+            max-height: calc(100% - 100px); /* Adjust 100px based on h1 + input height */
+            /* 100% is relative to .chat-container, 100px is approx space for h1 + input */
             overflow-y: auto; /* Enable vertical scrolling */
             margin-bottom: 15px;
             border-radius: 4px;
@@ -60,7 +61,8 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-end; /* Keep new messages at the bottom */
-            min-height: 0; /* Allow flex item to truly shrink when necessary */
+            /* Removed flex: 1; as max-height dictates scroll behavior here */
+            min-height: 100px; /* Ensure some visibility even if very little content */
         }
 
         /* Message Input Section */
@@ -140,16 +142,22 @@
         /* --- Mobile Responsiveness (Media Queries) --- */
         @media (max-width: 768px) {
             html, body {
-                /* On mobile, align to top, fill full viewport */
                 align-items: flex-start;
             }
             .chat-container {
                 width: 100%;
-                height: 100vh; /* <--- CRITICAL CHANGE: Full viewport height for mobile */
-                margin: 0; /* Remove margin on mobile */
+                height: 100vh; /* Full viewport height for mobile */
+                margin: 0;
                 border-radius: 0;
                 box-shadow: none;
                 padding: 15px;
+            }
+            /* Adjust max-height for messages on mobile if needed,
+               or let it be defined by remaining space (flex-basis: 0%)
+               if the container height is very reliable.
+               For this aggressive test, we keep the calc for consistency. */
+            .messages {
+                max-height: calc(100% - 100px); /* Same calc as desktop for now */
             }
             .message-input input,
             .message-input button {
