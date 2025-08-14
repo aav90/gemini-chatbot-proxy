@@ -1,14 +1,13 @@
 {
-  "name": "gemini-voice-chat",
+  "name": "gemini-chatbot-proxy",
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",
   "dependencies": {
     "@google/generative-ai": "^0.3.0",
-    "@google-cloud/text-to-speech": "^4.3.0",
-    "@google-cloud/speech": "^5.1.0",
-    "express": "^4.19.2",
+    "@google-cloud/text-to-speech": "^4.0.0",
     "cors": "^2.8.5",
-    "multer": "^1.4.5-lts.1"
+    "express": "^4.19.2",
+    "body-parser": "^1.20.2"
   }
 }
