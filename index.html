@@ -224,6 +224,7 @@
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
+        let mediaStream = null; // To store the stream from getUserMedia
 
         // Helper to manage button states (disable/enable)
         function setButtonsEnabled(enabled) {
@@ -296,28 +297,75 @@
         // Voice chat functionality
         async function startRecording() {
             if (isRecording) {
-                // If already recording, stop it
-                mediaRecorder.stop();
+                console.log('Stopping recording...');
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                } else {
+                    console.warn('MediaRecorder not active, cannot stop.');
+                    // Force UI reset if recorder state is unexpected
+                    setButtonsEnabled(true);
+                    recordButton.textContent = '🎤 Start';
+                    recordingIndicator.style.display = 'none';
+                    isRecording = false;
+                }
                 return;
             }
 
+            console.log('Attempting to start recording...');
             setButtonsEnabled(false); // Disable buttons
-            recordButton.textContent = '⏹️ Stop';
+            recordButton.textContent = '🎤 Stop';
             recordingIndicator.style.display = 'flex'; // Show recording indicator
             isRecording = true;
+            audioChunks = []; // Clear previous chunks
 
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // Use audio/webm;codecs=opus for better compatibility and compression
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-                audioChunks = [];
+                // Request microphone access
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log('Microphone access granted. Stream obtained.');
 
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                // Check for supported MIME types for MediaRecorder
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
+                                 MediaRecorder.isTypeSupported('audio/wav') ? 'audio/wav' :
+                                 ''; // Fallback to empty string if no preferred type is supported
+
+                if (!mimeType) {
+                    throw new Error('No supported audio MIME type found for MediaRecorder.');
+                }
+                console.log('Using MIME type:', mimeType);
+
+                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: mimeType });
+
+                mediaRecorder.ondataavailable = e => {
+                    console.log('ondataavailable event fired. Data size:', e.data.size);
+                    if (e.data.size > 0) {
+                        audioChunks.push(e.data);
+                    }
+                };
 
                 mediaRecorder.onstop = async () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' }); // Ensure WEBM_OPUS type
+                    console.log('onstop event fired. Total audio chunks:', audioChunks.length);
+                    // Stop all tracks on the media stream to release microphone
+                    if (mediaStream) {
+                        mediaStream.getTracks().forEach(track => track.stop());
+                        mediaStream = null; // Clear the stream reference
+                    }
+
+                    if (audioChunks.length === 0) {
+                        console.warn('No audio data recorded.');
+                        addMessage('No audio recorded. Please ensure your microphone is working and you speak clearly.', 'bot-message');
+                        // Reset UI state
+                        setButtonsEnabled(true);
+                        recordButton.textContent = '🎤 Start';
+                        recordingIndicator.style.display = 'none';
+                        isRecording = false;
+                        return; // Exit if no data
+                    }
+
+                    const blob = new Blob(audioChunks, { type: mimeType });
+                    console.log('Audio Blob created. Size:', blob.size, 'Type:', blob.type);
+
                     const formData = new FormData();
-                    formData.append('audio', blob, 'voice.webm'); // Use .webm extension
+                    formData.append('audio', blob, 'voice.' + mimeType.split('/')[1].split(';')[0]); // e.g., voice.webm or voice.wav
 
                     // Add a "Thinking..." message for user feedback
                     addMessage('Thinking...', 'bot-message');
@@ -330,9 +378,11 @@
                         });
 
                         if (!res.ok) {
-                            throw new Error(`HTTP error! status: ${res.status}`);
+                            const errorText = await res.text();
+                            throw new Error(`HTTP error! status: ${res.status}, details: ${errorText}`);
                         }
                         const data = await res.json();
+                        console.log('Backend response:', data);
 
                         // Remove "Thinking..." message and add the actual bot response
                         if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
@@ -342,16 +392,20 @@
                         chatHistory.push({ text: data.reply, className: 'bot-message' }); // Save to history
                         localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
-                        // Play the audio response
-                        const audio = new Audio('data:audio/mp3;base64,' + data.audio);
-                        audio.play();
+                        // Play the audio response if available
+                        if (data.audio) {
+                            const audio = new Audio('data:audio/mp3;base64,' + data.audio);
+                            audio.play().catch(e => console.error('Audio playback error:', e));
+                        } else {
+                            console.warn('No audio data received from backend.');
+                        }
                     } catch (error) {
-                        console.error('Voice chat error:', error);
+                        console.error('Voice chat fetch error:', error);
                         // Remove "Thinking..." message if error occurs
                         if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
                             messagesDiv.lastChild.remove();
                         }
-                        addMessage('Error processing voice. Please try again.', 'bot-message');
+                        addMessage(`Error processing voice: ${error.message}. Please try again.`, 'bot-message');
                     } finally {
                         // Reset UI state
                         setButtonsEnabled(true);
@@ -362,10 +416,21 @@
                 };
 
                 mediaRecorder.start();
+                console.log('MediaRecorder started. State:', mediaRecorder.state);
                 // No automatic stop here; user clicks 'Stop' or it stops after 5 seconds of silence (browser default)
             } catch (error) {
-                console.error('Microphone access denied or other recording error:', error);
-                addMessage('Microphone access denied or error starting recording. Please ensure microphone permissions are granted.', 'bot-message');
+                console.error('Microphone access or recording setup error:', error);
+                let errorMessage = 'Microphone access denied or error starting recording. Please ensure microphone permissions are granted.';
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Microphone access was denied. Please allow microphone access in your browser settings.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = 'No microphone found. Please ensure a microphone is connected and working.';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage = 'Microphone is in use by another application or browser tab. Please close other apps and try again.';
+                } else if (error.message.includes('No supported audio MIME type')) {
+                    errorMessage = 'Your browser does not support the required audio recording formats.';
+                }
+                addMessage(errorMessage, 'bot-message');
                 // Reset UI state even if recording fails to start
                 setButtonsEnabled(true);
                 recordButton.textContent = '🎤 Start';
@@ -376,5 +441,3 @@
     </script>
 </body>
 </html>
-
-<!--<serializedDesign>{}</serializedDesign>-->
