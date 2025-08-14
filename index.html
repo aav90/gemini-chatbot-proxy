@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEARNIAMO Voice Assistant</title>
     <style>
-        /* Universal Box Sizing */
+        /* Universal Box Sizing: Crucial for reliable sizing */
         *, *::before, *::after {
             box-sizing: border-box;
         }
@@ -95,7 +95,7 @@
             cursor: not-allowed;
         }
 
-        /* Recording status */
+        /* Recording status indicator */
         .recording-indicator {
             background-color: red;
             color: white;
@@ -193,11 +193,16 @@
             userInput.disabled = !enabled;
         }
 
-        // Helper to add message to UI
+        // Helper to add message to UI and handle basic markdown
         function addMessage(text, className) {
             const el = document.createElement('div');
             el.className = className;
-            el.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br/>'); // Basic markdown to HTML
+            // Convert basic markdown to HTML for better readability
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')     // Italic
+                .replace(/\n/g, '<br/>');                 // Newlines
+            el.innerHTML = formattedText;
             messagesDiv.appendChild(el);
             messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
         }
@@ -213,6 +218,7 @@
             setButtonsEnabled(false); // Disable buttons during processing
 
             try {
+                // Use the full Cloud Run service URL
                 const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -257,10 +263,11 @@
                     const formData = new FormData();
                     formData.append('audio', blob, 'voice.wav');
 
-                    // Play processing indicator (optional, you can add a spinning wheel)
-                    addMessage('Thinking...', 'bot-message'); // Indicate processing
+                    // Add a "Thinking..." message for user feedback
+                    addMessage('Thinking...', 'bot-message');
 
                     try {
+                        // Use the full Cloud Run service URL
                         const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/voice', {
                             method: 'POST',
                             body: formData
@@ -271,32 +278,37 @@
                         }
                         const data = await res.json();
 
-                        // Replace "Thinking..." message or add new one
-                        // For simplicity, we'll just add new one. For replacement, you'd need to track the thinking message element.
-                        messagesDiv.lastChild.remove(); // Remove "Thinking..."
+                        // Remove "Thinking..." message and add the actual bot response
+                        if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
+                            messagesDiv.lastChild.remove();
+                        }
                         addMessage(data.reply, 'bot-message');
 
+                        // Play the audio response
                         const audio = new Audio('data:audio/mp3;base64,' + data.audio);
                         audio.play();
                     } catch (error) {
                         console.error('Voice chat error:', error);
-                        messagesDiv.lastChild.remove(); // Remove "Thinking..."
+                        // Remove "Thinking..." message if error occurs
+                        if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
+                            messagesDiv.lastChild.remove();
+                        }
                         addMessage('Error processing voice. Please try again.', 'bot-message');
                     } finally {
-                        setButtonsEnabled(true); // Re-enable buttons
+                        // Reset UI state
+                        setButtonsEnabled(true);
                         recordButton.textContent = '🎤 Start';
-                        recordingIndicator.style.display = 'none'; // Hide indicator
+                        recordingIndicator.style.display = 'none';
                         isRecording = false;
                     }
                 };
 
                 mediaRecorder.start();
-                // Optionally, you can add a visual timer here.
-                // For now, let the user manually stop or set a longer timeout.
-                // setTimeout(() => { if (isRecording) mediaRecorder.stop(); }, 10000); // Auto-stop after 10 seconds
+                // No automatic stop here; user clicks 'Stop' or it stops after 5 seconds of silence (browser default)
             } catch (error) {
                 console.error('Microphone access denied or other recording error:', error);
                 addMessage('Microphone access denied or error starting recording. Please ensure microphone permissions are granted.', 'bot-message');
+                // Reset UI state even if recording fails to start
                 setButtonsEnabled(true);
                 recordButton.textContent = '🎤 Start';
                 recordingIndicator.style.display = 'none';
