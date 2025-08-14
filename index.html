@@ -314,7 +314,7 @@
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
 
                 mediaRecorder.onstop = async () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/wav' }); // Ensure WAV type
+                    const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' }); // Ensure WAV type
                     const formData = new FormData();
                     formData.append('audio', blob, 'voice.wav');
 
