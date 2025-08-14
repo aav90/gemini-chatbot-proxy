@@ -169,7 +169,7 @@
             }
             .chat-container {
                 width: 100%;
-                height: 100vh; /* Mobile: full viewport height */
+                height: 100vh; /* Full viewport height on mobile */
                 min-height: 100vh;
                 max-height: 100vh;
                 margin: 0;
@@ -308,15 +308,16 @@
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
+                // Use audio/webm;codecs=opus for better compatibility and compression
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
 
                 mediaRecorder.onstop = async () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' }); // Ensure WAV type
+                    const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' }); // Ensure WEBM_OPUS type
                     const formData = new FormData();
-                    formData.append('audio', blob, 'voice.wav');
+                    formData.append('audio', blob, 'voice.webm'); // Use .webm extension
 
                     // Add a "Thinking..." message for user feedback
                     addMessage('Thinking...', 'bot-message');
