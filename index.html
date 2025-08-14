@@ -1,76 +1,308 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEARNIAMO Voice Assistant</title>
-<style>
-/* Basic chat UI styles */
-body { font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; background:#f4f4f4; }
-.chat-container { width: 95%; max-width:600px; height:600px; background:#fff; padding:20px; border-radius:8px; display:flex; flex-direction:column; }
-.messages { flex:1; overflow-y:scroll; margin-bottom:15px; background:#e9e9e9; padding:10px; border-radius:4px; }
-.message-input { display:flex; }
-.message-input input { flex:1; padding:12px; }
-.message-input button { padding:12px; }
-.user-message { text-align:right; background:black; color:white; padding:8px 12px; border-radius:15px; margin-bottom:8px; }
-.bot-message { text-align:left; background:#e0e0e0; padding:8px 12px; border-radius:15px; margin-bottom:8px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEARNIAMO Voice Assistant</title>
+    <style>
+        /* Universal Box Sizing */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        /* Body and Overall Container Styling */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Main Chat Container */
+        .chat-container {
+            width: 95%;
+            max-width: 600px;
+            height: 90vh; /* Responsive height for desktop */
+            min-height: 400px; /* Minimum height */
+            max-height: 700px; /* Maximum height */
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Ensures internal elements don't spill over */
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        /* Messages Display Area */
+        .messages {
+            flex-grow: 1; /* Allows messages area to take available space */
+            overflow-y: auto; /* Enables vertical scrolling when content overflows */
+            margin-bottom: 15px;
+            background: #e9e9e9;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column; /* Messages stack vertically */
+        }
+
+        /* Message Input Section */
+        .message-input {
+            display: flex;
+            flex-shrink: 0; /* Prevent input from shrinking */
+            gap: 10px; /* Space between input and buttons */
+        }
+
+        .message-input input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            min-width: 0; /* Allows input to shrink within flex container */
+        }
+
+        .message-input button {
+            padding: 12px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            white-space: nowrap; /* Prevents button text from wrapping */
+            flex-shrink: 0; /* Prevents buttons from shrinking */
+        }
+
+        .message-input button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+
+        .message-input button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Recording status */
+        .recording-indicator {
+            background-color: red;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-left: 10px;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            animation: pulse 1s infinite alternate; /* Simple pulse animation */
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.5; }
+        }
+
+        /* Message Styling */
+        .user-message, .bot-message {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 15px;
+            word-break: break-word; /* Prevents long words from overflowing */
+            line-height: 1.4;
+            max-width: 80%; /* Limit message bubble width */
+        }
+
+        .user-message {
+            text-align: right;
+            background: black;
+            color: white;
+            align-self: flex-end; /* Aligns user message to the right */
+        }
+
+        .bot-message {
+            text-align: left;
+            background: #e0e0e0;
+            color: #333;
+            align-self: flex-start; /* Aligns bot message to the left */
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            html, body {
+                align-items: flex-start; /* Align to top on mobile */
+            }
+            .chat-container {
+                width: 100%;
+                height: 100vh; /* Full viewport height on mobile */
+                min-height: 100vh;
+                max-height: 100vh;
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 15px;
+            }
+            .message-input {
+                flex-wrap: wrap; /* Allow buttons to wrap if needed */
+            }
+            .message-input input {
+                flex-basis: 100%; /* Input takes full width on mobile */
+                margin-bottom: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="chat-container">
-<h1>LEARNIAMO Assistant</h1>
-<div class="messages" id="messages"></div>
-<div class="message-input">
-<input type="text" id="userInput" placeholder="Type a question..." onkeypress="if(event.keyCode===13)sendText()">
-<button onclick="sendText()">Send</button>
-<button onclick="startRecording()">🎤</button>
-</div>
-</div>
-<script>
-const messagesDiv = document.getElementById('messages');
-let mediaRecorder;
-let audioChunks = [];
+    <div class="chat-container">
+        <h1>LEARNIAMO Assistant</h1>
+        <div class="messages" id="messages"></div>
+        <div class="message-input">
+            <input type="text" id="userInput" placeholder="Type a question..." onkeypress="if(event.keyCode===13) sendText()">
+            <button id="sendButton" onclick="sendText()">Send</button>
+            <button id="recordButton" onclick="startRecording()">🎤 Start</button>
+            <span id="recordingIndicator" class="recording-indicator">REC</span>
+        </div>
+    </div>
 
-function addMessage(text, className){ 
-  const el = document.createElement('div'); 
-  el.className = className; 
-  el.textContent = text; 
-  messagesDiv.appendChild(el); 
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const recordButton = document.getElementById('recordButton');
+        const recordingIndicator = document.getElementById('recordingIndicator');
 
-// Text chat
-async function sendText(){
-  const input = document.getElementById('userInput');
-  const msg = input.value.trim();
-  if(!msg) return;
-  addMessage(msg,'user-message');
-  input.value='';
-  const res = await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
-  const data = await res.json();
-  addMessage(data.reply,'bot-message');
-}
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
 
-// Voice chat
-function startRecording(){
-  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks=[];
-    mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
-    mediaRecorder.onstop = async ()=>{
-      const blob = new Blob(audioChunks,{type:'audio/wav'});
-      const formData = new FormData();
-      formData.append('audio',blob,'voice.wav');
-      const res = await fetch('/voice',{method:'POST',body:formData});
-      const data = await res.json();
-      addMessage(data.reply,'bot-message');
-      const audio = new Audio('data:audio/mp3;base64,'+data.audio);
-      audio.play();
-    };
-    mediaRecorder.start();
-    setTimeout(()=>mediaRecorder.stop(),5000); // record 5 sec
-  });
-}
-</script>
+        // Helper to manage button states (disable/enable)
+        function setButtonsEnabled(enabled) {
+            sendButton.disabled = !enabled;
+            recordButton.disabled = !enabled;
+            userInput.disabled = !enabled;
+        }
+
+        // Helper to add message to UI
+        function addMessage(text, className) {
+            const el = document.createElement('div');
+            el.className = className;
+            el.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br/>'); // Basic markdown to HTML
+            messagesDiv.appendChild(el);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
+        }
+
+        // Text chat functionality
+        async function sendText() {
+            const msg = userInput.value.trim();
+            if (!msg) return;
+
+            addMessage(msg, 'user-message'); // Add user message immediately
+            userInput.value = ''; // Clear input
+
+            setButtonsEnabled(false); // Disable buttons during processing
+
+            try {
+                const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                const data = await res.json();
+                addMessage(data.reply, 'bot-message'); // Add bot response after it's received
+            } catch (error) {
+                console.error('Text chat error:', error);
+                addMessage('Error: Could not get a response. Please try again.', 'bot-message');
+            } finally {
+                setButtonsEnabled(true); // Re-enable buttons
+            }
+        }
+
+        // Voice chat functionality
+        async function startRecording() {
+            if (isRecording) {
+                // If already recording, stop it
+                mediaRecorder.stop();
+                return;
+            }
+
+            setButtonsEnabled(false); // Disable buttons
+            recordButton.textContent = '⏹️ Stop';
+            recordingIndicator.style.display = 'flex'; // Show recording indicator
+            isRecording = true;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio', blob, 'voice.wav');
+
+                    // Play processing indicator (optional, you can add a spinning wheel)
+                    addMessage('Thinking...', 'bot-message'); // Indicate processing
+
+                    try {
+                        const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/voice', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!res.ok) {
+                            throw new Error(`HTTP error! status: ${res.status}`);
+                        }
+                        const data = await res.json();
+
+                        // Replace "Thinking..." message or add new one
+                        // For simplicity, we'll just add new one. For replacement, you'd need to track the thinking message element.
+                        messagesDiv.lastChild.remove(); // Remove "Thinking..."
+                        addMessage(data.reply, 'bot-message');
+
+                        const audio = new Audio('data:audio/mp3;base64,' + data.audio);
+                        audio.play();
+                    } catch (error) {
+                        console.error('Voice chat error:', error);
+                        messagesDiv.lastChild.remove(); // Remove "Thinking..."
+                        addMessage('Error processing voice. Please try again.', 'bot-message');
+                    } finally {
+                        setButtonsEnabled(true); // Re-enable buttons
+                        recordButton.textContent = '🎤 Start';
+                        recordingIndicator.style.display = 'none'; // Hide indicator
+                        isRecording = false;
+                    }
+                };
+
+                mediaRecorder.start();
+                // Optionally, you can add a visual timer here.
+                // For now, let the user manually stop or set a longer timeout.
+                // setTimeout(() => { if (isRecording) mediaRecorder.stop(); }, 10000); // Auto-stop after 10 seconds
+            } catch (error) {
+                console.error('Microphone access denied or other recording error:', error);
+                addMessage('Microphone access denied or error starting recording. Please ensure microphone permissions are granted.', 'bot-message');
+                setButtonsEnabled(true);
+                recordButton.textContent = '🎤 Start';
+                recordingIndicator.style.display = 'none';
+                isRecording = false;
+            }
+        }
+    </script>
 </body>
 </html>
