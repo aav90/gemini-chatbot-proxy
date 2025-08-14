@@ -67,8 +67,8 @@ app.post('/voice', upload.single('audio'), async (req, res) => {
     const [sttResponse] = await speechClient.recognize({
       audio: { content: audioBytes },
       config: { 
-        encoding: 'LINEAR16', // Ensure this matches the client-side encoding (audio/wav)
-        sampleRateHertz: 44100, // Ensure this matches the client-side sample rate
+        encoding: 'WEBM_OPUS', // <--- CHANGED TO WEBM_OPUS
+        sampleRateHertz: 48000, // <--- CHANGED TO 48000
         languageCode: 'en-US',
       },
     });
