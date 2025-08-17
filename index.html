@@ -1,59 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEARNIAMO AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Universal Box Sizing */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        /* Basic Resets & Full Height Setup */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Roboto', sans-serif;
+            background-color: #e0f2f7; /* Light blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333; /* Default text color */
+        }
+
+        /* Main Chat Container */
+        .chat-container {
+            max-width: 600px;
+            width: 95%;
+            height: 650px; /* Slightly increased height for better spacing */
+            background: #ffffff;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Title */
+        h1 {
+            text-align: center;
+            color: #007bff; /* Blue title */
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Messages Display Area */
+        .messages {
+            flex-grow: 1; /* Allows messages area to take available space */
+            overflow-y: auto; /* Scroll only when content overflows */
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9; /* Very light grey for message background */
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Space between messages */
+        }
+
+        /* Scrollbar Styling (for Webkit browsers) */
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        .messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .messages::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Message Input Section */
+        .message-input {
+            display: flex;
+            width: 100%;
+            flex-shrink: 0;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-input input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 25px; /* Rounded input field */
+            font-size: 1rem;
+            min-width: 0;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .message-input input:focus {
+            border-color: #007bff;
+        }
+
+        .message-input button {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px; /* Rounded buttons */
+            cursor: pointer;
+            font-size: 1rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .message-input button:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .message-input button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
         /* Recording status indicator */
         .recording-indicator {
-            background-color: red;
+            background-color: #dc3545; /* Red for recording */
             color: white;
             font-weight: bold;
-            border-radius: 4px;
-            padding: 5px 10px;
+            border-radius: 25px;
+            padding: 8px 15px;
             margin-left: 10px;
             display: none; /* Hidden by default */
             align-items: center;
             justify-content: center;
-            animation: pulse 1s infinite alternate; /* Simple pulse animation */
+            animation: pulse 1s infinite alternate;
+            font-size: 0.9em;
         }
 
         @keyframes pulse {
             from { opacity: 1; }
-            to { opacity: 0.5; }
+            to { opacity: 0.7; }
+        }
+
+        /* Message Bubble Styling */
+        .message-bubble {
+            padding: 10px 15px;
+            border-radius: 18px; /* More rounded corners for bubbles */
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 0.95em;
         }
 
         /* User Message Styling */
         .user-message {
-            text-align: right;
+            align-self: flex-end; /* Align to the right */
+            background-color: #007bff; /* Blue for user messages */
             color: white;
-            background-color: black;
-            margin-bottom: 8px;
-            word-break: break-word;
-            padding: 8px 12px;
-            border-radius: 15px;
-            align-self: flex-end; /* Align to the right side of the messages div */
-            max-width: 80%;
-            line-height: 1.4;
+            border-bottom-right-radius: 4px; /* Slightly less rounded on the bottom-right for user */
         }
 
         /* Bot Message Styling */
         .bot-message {
-            text-align: left;
-            color: #000;
-            font-weight: normal;
-            margin-bottom: 8px;
-            word-break: break-word;
-            line-height: 1.5;
-            padding: 8px 12px;
-            border-radius: 15px;
-            background-color: #e0e0e0;
-            align-self: flex-start; /* Align to the left side of the messages div */
-            max-width: 80%;
+            align-self: flex-start; /* Align to the left */
+            background-color: #e9ecef; /* Light grey for bot messages */
+            color: #333;
+            border-bottom-left-radius: 4px; /* Slightly less rounded on the bottom-left for bot */
         }
+
         .bot-message p {
-            margin-bottom: 0.5em;
-            margin-top: 0;
+            margin: 0; /* Remove default paragraph margins */
+            padding: 0;
         }
-        .bot-message p:last-child {
-            margin-bottom: 0;
-        }
-        .bot-message strong, .bot-message em {
-            color: inherit;
+        .bot-message audio {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 5px;
+            outline: none;
         }
 
         /* --- Mobile Responsiveness (Media Queries) --- */
@@ -71,18 +199,14 @@
                 box-shadow: none;
                 padding: 15px;
             }
-            /* Mobile: messages area calculated dynamically */
             .messages {
-                height: auto; /* Let content dictate height up to flex limit */
                 flex-grow: 1; /* Allow messages to take remaining space */
-                flex-shrink: 1;
-                flex-basis: auto;
                 min-height: 0; /* Important for flex items with overflow */
                 overflow-y: auto; /* Use auto scroll on mobile for cleaner look */
             }
             .message-input {
-                height: auto;
                 flex-wrap: wrap; /* Allow buttons to wrap if needed */
+                justify-content: center; /* Center items when wrapped */
             }
             .message-input input {
                 flex-basis: 100%; /* Input takes full width on mobile */
@@ -90,15 +214,24 @@
             }
             .message-input button {
                 flex-basis: calc(50% - 5px); /* Two buttons per row on mobile */
+                margin-bottom: 5px; /* Space between wrapped buttons */
+            }
+            .recording-indicator {
+                flex-basis: 100%;
+                margin-left: 0;
+                margin-top: 5px;
             }
         }
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <h1>LEARNIAMO Assistant</h1>
+        <h1>LEARNIAMO AI Assistant</h1>
         <div class="messages" id="messages">
             <!-- Chat messages will be appended here -->
+            <div class="bot-message message-bubble">
+                <p>Hello! I'm your LEARNIAMO AI Assistant. How can I help you today?</p>
+            </div>
         </div>
         <div class="message-input">
             <input type="text" id="user-input" placeholder="Type your message...">
@@ -115,7 +248,10 @@
         const messagesDiv = document.getElementById('messages');
         const recordingIndicator = document.getElementById('recording-indicator');
 
-        const API_BASE_URL = window.location.origin; // Or your Cloud Run service URL
+        // Use window.location.origin for Cloud Run deployment
+        // For local testing, if your server runs on a different port, you might need to specify it:
+        // const API_BASE_URL = 'http://localhost:8080';
+        const API_BASE_URL = window.location.origin;
 
         let mediaRecorder;
         let audioChunks = [];
@@ -124,14 +260,23 @@
         // Function to add a message to the chat display
         function addMessage(sender, text, audioBase64 = null) {
             const messageElement = document.createElement('div');
+            messageElement.classList.add('message-bubble'); // Apply common bubble styling
             messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-            messageElement.innerHTML = text; // Use innerHTML to allow for basic formatting if Gemini returns it
+
+            // Use innerHTML to allow for basic formatting (like bold, italics) if Gemini returns it
+            // For safety, if you expect user input to be displayed, use textContent for user messages
+            messageElement.innerHTML = text;
 
             if (audioBase64) {
                 const audioElement = document.createElement('audio');
                 audioElement.controls = true;
                 audioElement.src = `data:audio/mp3;base64,${audioBase64}`;
+                audioElement.type = 'audio/mp3'; // Specify type for better browser compatibility
                 messageElement.appendChild(audioElement);
+                // Autoplay the audio if it's a bot message
+                if (sender === 'bot') {
+                    audioElement.play().catch(e => console.error("Audio autoplay failed:", e));
+                }
             }
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
@@ -146,6 +291,7 @@
 
                 sendButton.disabled = true;
                 voiceButton.disabled = true;
+                userInput.disabled = true; // Disable input field
 
                 try {
                     const response = await fetch(`${API_BASE_URL}/chat`, {
@@ -168,6 +314,8 @@
                 } finally {
                     sendButton.disabled = false;
                     voiceButton.disabled = false;
+                    userInput.disabled = false; // Re-enable input field
+                    userInput.focus(); // Put focus back on input
                 }
             }
         });
@@ -178,7 +326,8 @@
                 // Start recording
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' }); // Specify WEBM_OPUS
+                    // Ensure mimeType matches backend expectation (WEBM_OPUS)
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
 
                     mediaRecorder.ondataavailable = (event) => {
                         audioChunks.push(event.data);
@@ -190,6 +339,7 @@
 
                         sendButton.disabled = true;
                         voiceButton.disabled = true;
+                        userInput.disabled = true;
                         recordingIndicator.style.display = 'none';
 
                         addMessage('user', '<i>(Voice message sent...)</i>');
@@ -215,6 +365,8 @@
                         } finally {
                             sendButton.disabled = false;
                             voiceButton.disabled = false;
+                            userInput.disabled = false;
+                            userInput.focus();
                         }
                     };
 
@@ -223,9 +375,14 @@
                     voiceButton.textContent = 'Stop Recording';
                     recordingIndicator.style.display = 'flex';
                     sendButton.disabled = true; // Disable send button during recording
+                    userInput.disabled = true; // Disable input field during recording
                 } catch (err) {
                     console.error('Error accessing microphone:', err);
                     alert('Could not access microphone. Please ensure it is connected and permissions are granted.');
+                    // Re-enable buttons if microphone access fails
+                    sendButton.disabled = false;
+                    voiceButton.disabled = false;
+                    userInput.disabled = false;
                 }
             } else {
                 // Stop recording
@@ -234,6 +391,7 @@
                 voiceButton.textContent = 'Voice';
                 recordingIndicator.style.display = 'none';
                 sendButton.disabled = false; // Re-enable send button
+                userInput.disabled = false; // Re-enable input field
             }
         });
 
@@ -241,6 +399,13 @@
         userInput.addEventListener('input', () => {
             if (!isRecording) {
                 sendButton.disabled = userInput.value.trim() === '';
+            }
+        });
+
+        // Allow sending message with Enter key
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !sendButton.disabled) {
+                sendButton.click();
             }
         });
 
