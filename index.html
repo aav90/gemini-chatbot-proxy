@@ -228,7 +228,6 @@
     <div class="chat-container">
         <h1>LEARNIAMO AI Assistant</h1>
         <div class="messages" id="messages">
-            <!-- Chat messages will be appended here -->
             <div class="bot-message message-bubble">
                 <p>Hello! I'm your LEARNIAMO AI Assistant. How can I help you today?</p>
             </div>
@@ -248,50 +247,44 @@
         const messagesDiv = document.getElementById('messages');
         const recordingIndicator = document.getElementById('recording-indicator');
 
-        // Use window.location.origin for Cloud Run deployment
-        // For local testing, if your server runs on a different port, you might need to specify it:
-        // const API_BASE_URL = 'http://localhost:8080';
-        const API_BASE_URL = window.location.origin;
+        // IMPORTANT: This URL MUST be the direct URL of your Cloud Run service.
+        // It should NOT be window.location.origin if you are embedding this HTML
+        // within Google Sites or another platform that might change the origin.
+        const API_BASE_URL = 'https://gemini-chatbot-proxy-653233019960.europe-west1.run.app';
 
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
 
-        // Function to add a message to the chat display
         function addMessage(sender, text, audioBase64 = null) {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message-bubble'); // Apply common bubble styling
+            messageElement.classList.add('message-bubble');
             messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-
-            // Use innerHTML to allow for basic formatting (like bold, italics) if Gemini returns it
-            // For safety, if you expect user input to be displayed, use textContent for user messages
             messageElement.innerHTML = text;
 
             if (audioBase64) {
                 const audioElement = document.createElement('audio');
                 audioElement.controls = true;
                 audioElement.src = `data:audio/mp3;base64,${audioBase64}`;
-                audioElement.type = 'audio/mp3'; // Specify type for better browser compatibility
+                audioElement.type = 'audio/mp3';
                 messageElement.appendChild(audioElement);
-                // Autoplay the audio if it's a bot message
                 if (sender === 'bot') {
                     audioElement.play().catch(e => console.error("Audio autoplay failed:", e));
                 }
             }
             messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Handle sending text messages
         sendButton.addEventListener('click', async () => {
             const message = userInput.value.trim();
             if (message) {
                 addMessage('user', message);
-                userInput.value = ''; // Clear input
+                userInput.value = '';
 
                 sendButton.disabled = true;
                 voiceButton.disabled = true;
-                userInput.disabled = true; // Disable input field
+                userInput.disabled = true;
 
                 try {
                     const response = await fetch(`${API_BASE_URL}/chat`, {
@@ -314,19 +307,16 @@
                 } finally {
                     sendButton.disabled = false;
                     voiceButton.disabled = false;
-                    userInput.disabled = false; // Re-enable input field
-                    userInput.focus(); // Put focus back on input
+                    userInput.disabled = false;
+                    userInput.focus();
                 }
             }
         });
 
-        // Handle voice input
         voiceButton.addEventListener('click', async () => {
             if (!isRecording) {
-                // Start recording
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    // Ensure mimeType matches backend expectation (WEBM_OPUS)
                     mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
 
                     mediaRecorder.ondataavailable = (event) => {
@@ -335,7 +325,7 @@
 
                     mediaRecorder.onstop = async () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
-                        audioChunks = []; // Clear for next recording
+                        audioChunks = [];
 
                         sendButton.disabled = true;
                         voiceButton.disabled = true;
@@ -346,7 +336,7 @@
 
                         try {
                             const formData = new FormData();
-                            formData.append('audio', audioBlob, 'audio.webm'); // Filename is important for Multer
+                            formData.append('audio', audioBlob, 'audio.webm');
 
                             const response = await fetch(`${API_BASE_URL}/voice`, {
                                 method: 'POST',
@@ -374,42 +364,37 @@
                     isRecording = true;
                     voiceButton.textContent = 'Stop Recording';
                     recordingIndicator.style.display = 'flex';
-                    sendButton.disabled = true; // Disable send button during recording
-                    userInput.disabled = true; // Disable input field during recording
+                    sendButton.disabled = true;
+                    userInput.disabled = true;
                 } catch (err) {
                     console.error('Error accessing microphone:', err);
-                    alert('Could not access microphone. Please ensure it is connected and permissions are granted.');
-                    // Re-enable buttons if microphone access fails
+                    addMessage('bot', `Microphone access denied. Please ensure your browser and website settings allow microphone use.`);
                     sendButton.disabled = false;
                     voiceButton.disabled = false;
                     userInput.disabled = false;
                 }
             } else {
-                // Stop recording
                 mediaRecorder.stop();
                 isRecording = false;
                 voiceButton.textContent = 'Voice';
                 recordingIndicator.style.display = 'none';
-                sendButton.disabled = false; // Re-enable send button
-                userInput.disabled = false; // Re-enable input field
+                sendButton.disabled = false;
+                userInput.disabled = false;
             }
         });
 
-        // Enable send button if user types
         userInput.addEventListener('input', () => {
             if (!isRecording) {
                 sendButton.disabled = userInput.value.trim() === '';
             }
         });
 
-        // Allow sending message with Enter key
         userInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter' && !sendButton.disabled) {
                 sendButton.click();
             }
         });
 
-        // Initial state: disable send button if input is empty
         sendButton.disabled = true;
     </script>
 </body>
