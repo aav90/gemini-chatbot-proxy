@@ -5,18 +5,338 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEARNIAMO Assistant</title>
     <style>
-        /* همان CSS که فرستادی بدون تغییر */
-        *, *::before, *::after { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; }
-        .chat-container { max-width: 600px; width: 95%; height: 600px; margin: auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
-        h1 { text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; flex-shrink: 0; height: 30px; }
-        .messages { border: 1px solid #ccc; padding: 10px; height: 480px; overflow-y: scroll; margin-bottom: 15px; border-radius: 4px; background-color: #e9e9e9; display: flex; flex-direction: column; justify-content: flex-start; flex-shrink: 0; }
-        .message-input { display: flex; width: 100%; flex-shrink: 0; align-items: center; height: 45px; gap: 10px; }
-        .message-input input { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; min-width: 0; }
-        .message-input button { padding: 12px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; white-space: nowrap; flex-shrink: 0; }
-        .message-input button:hover:not(:disabled) { background-color: #0056b3; }
-        .message-input button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        .recording-indicator { background-color: red; color: white; font-weight: bold; border-radius: 4px; padding: 5px 10px; margin-left: 10px; display: none; align-items: center; justify-content: center; animation: pulse 1s infinite alternate; }
-        @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
-        .user-message { text-align: right; color: white; background-color: black; margin-bottom: 8px; word-break: break-word; padding: 8px 12px; border-radius: 15px; align-self: flex-end; max-width: 80%; line-height: 1.4; }
-        .bot-message { text-align: left; color: #000; font-weight: normal; margin-bottom: 8px; word-break: break-word; line-height: 1.5; padding: 8px 12px; border-radius: 15px; background-color: #e0e0e0; align-self: flex-start;
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            max-width: 600px;
+            width: 95%;
+            height: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+            height: 30px;
+        }
+
+        .messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 480px;
+            overflow-y: scroll;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #e9e9e9;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        .message-input {
+            display: flex;
+            width: 100%;
+            flex-shrink: 0;
+            align-items: center;
+            height: 45px;
+            gap: 10px;
+        }
+
+        .message-input input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            min-width: 0;
+        }
+
+        .message-input button {
+            padding: 12px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .message-input button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+
+        .message-input button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .recording-indicator {
+            background-color: red;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-left: 10px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.5; }
+        }
+
+        .user-message {
+            text-align: right;
+            color: white;
+            background-color: black;
+            margin-bottom: 8px;
+            word-break: break-word;
+            padding: 8px 12px;
+            border-radius: 15px;
+            align-self: flex-end;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+        .bot-message {
+            text-align: left;
+            color: #000;
+            font-weight: normal;
+            margin-bottom: 8px;
+            word-break: break-word;
+            line-height: 1.5;
+            padding: 8px 12px;
+            border-radius: 15px;
+            background-color: #e0e0e0;
+            align-self: flex-start;
+            max-width: 80%;
+        }
+
+        .bot-message p {
+            margin-bottom: 0.5em;
+            margin-top: 0;
+        }
+
+        .bot-message p:last-child {
+            margin-bottom: 0;
+        }
+
+        .bot-message strong, .bot-message em {
+            color: inherit;
+        }
+
+        @media (max-width: 768px) {
+            html, body {
+                align-items: flex-start;
+            }
+            .chat-container {
+                width: 100%;
+                height: 100vh;
+                min-height: 100vh;
+                max-height: 100vh;
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 15px;
+            }
+            .messages {
+                height: auto;
+                flex-grow: 1;
+                flex-shrink: 1;
+                flex-basis: auto;
+                min-height: 0;
+                overflow-y: auto;
+            }
+            .message-input {
+                height: auto;
+                flex-wrap: wrap;
+            }
+            .message-input input {
+                flex-basis: 100%;
+                margin-bottom: 10px;
+            }
+            .message-input button {
+                flex-basis: calc(50% - 5px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h1>LEARNIAMO Assistant</h1>
+        <div class="messages" id="messages"></div>
+        <div class="message-input">
+            <input type="text" id="userInput" placeholder="Ask a language question..." onkeypress="if(event.keyCode === 13) sendMessage()">
+            <button id="sendButton" onclick="sendMessage()">Send</button>
+            <button id="recordButton" onclick="startRecording()">🎤 Start</button>
+            <span id="recordingIndicator" class="recording-indicator">REC</span>
+        </div>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const recordButton = document.getElementById('recordButton');
+        const recordingIndicator = document.getElementById('recordingIndicator');
+        const chatHistoryKey = 'chatHistory';
+
+        let chatHistory = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        function setButtonsEnabled(enabled) {
+            sendButton.disabled = !enabled;
+            recordButton.disabled = !enabled;
+            userInput.disabled = !enabled;
+        }
+
+        function addMessage(text, className) {
+            const el = document.createElement('div');
+            el.className = className;
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br/>');
+            el.innerHTML = formattedText;
+            messagesDiv.appendChild(el);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function displayChatHistory() {
+            messagesDiv.innerHTML = '';
+            chatHistory.forEach(message => addMessage(message.text, message.className));
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        displayChatHistory();
+
+        async function sendMessage() {
+            const msg = userInput.value.trim();
+            if (!msg) return;
+
+            addMessage(msg, 'user-message');
+            chatHistory.push({ text: msg, className: 'user-message' });
+            localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
+
+            userInput.value = '';
+            setButtonsEnabled(false);
+
+            try {
+                const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+                addMessage(data.reply, 'bot-message');
+                chatHistory.push({ text: data.reply, className: 'bot-message' });
+                localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
+
+            } catch (error) {
+                console.error('Text chat error:', error);
+                addMessage('Error: Could not get a response. Please try again.', 'bot-message');
+            } finally {
+                setButtonsEnabled(true);
+            }
+        }
+
+        async function startRecording() {
+            if (isRecording) {
+                mediaRecorder.stop();
+                return;
+            }
+
+            setButtonsEnabled(false);
+            recordButton.textContent = '⏹️ Stop';
+            recordingIndicator.style.display = 'flex';
+            isRecording = true;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+                    const formData = new FormData();
+                    formData.append('audio', blob, 'voice.webm');
+
+                    addMessage('Thinking...', 'bot-message');
+
+                    try {
+                        const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/voice', { method: 'POST', body: formData });
+
+                        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                        const data = await res.json();
+
+                        if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
+                            messagesDiv.lastChild.remove();
+                        }
+                        addMessage(data.reply, 'bot-message');
+                        chatHistory.push({ text: data.reply, className: 'bot-message' });
+                        localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
+
+                        const audio = new Audio('data:audio/mp3;base64,' + data.audio);
+                        audio.play();
+                    } catch (error) {
+                        console.error('Voice chat error:', error);
+                        if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
+                            messagesDiv.lastChild.remove();
+                        }
+                        addMessage('Error processing voice. Please try again.', 'bot-message');
+                    } finally {
+                        setButtonsEnabled(true);
+                        recordButton.textContent = '🎤 Start';
+                        recordingIndicator.style.display = 'none';
+                        isRecording = false;
+                    }
+                };
+
+                mediaRecorder.start();
+            } catch (error) {
+                console.error('Microphone access denied or other recording error:', error);
+                addMessage('Microphone access denied or error starting recording. Please ensure microphone permissions are granted.', 'bot-message');
+                setButtonsEnabled(true);
+                recordButton.textContent = '🎤 Start';
+                recordingIndicator.style.display = 'none';
+                isRecording = false;
+            }
+        }
+    </script>
+</body>
+</html>
