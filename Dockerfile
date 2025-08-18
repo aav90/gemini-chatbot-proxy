@@ -1,16 +1,20 @@
-FROM node:20-slim
+# Use an official Node.js runtime as a parent image
+FROM node:18-slim
 
-WORKDIR /app
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json (if it exists) first
-# This allows Docker to cache the npm install layer if dependencies haven't changed
+# Copy package.json and package-lock.json (if any)
 COPY package*.json ./
 
-# Install all dependencies (remove --production)
+# Install app dependencies
 RUN npm install
 
-# Copy the rest of your application code
+# Copy the rest of your app's source code
 COPY . .
 
-# Command to run your application
-CMD ["node", "server.js"]
+# Expose the port your app runs on
+EXPOSE 3000
+
+# Define the command to run your app
+CMD ["npm", "start"]
