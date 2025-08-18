@@ -3,414 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LEARNIAMO AI Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>LEARNIAMO Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Universal Box Sizing */
-        *, *::before, *::after {
-            box-sizing: border-box;
+        :root {
+            --primary-blue: #007bff; /* A vibrant blue for accents */
+            --light-sky-blue: #e0f2f7; /* Light sky blue for background */
+            --dark-blue: #003366; /* Darker blue for text/elements */
+            --black: #1a1a1a; /* Near black for main text */
+            --white: #ffffff;
+            --light-grey: #f8f9fa;
+            --medium-grey: #dee2e6;
         }
 
-        /* Basic Resets & Full Height Setup */
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+        body {
             font-family: 'Roboto', sans-serif;
-            background-color: #e0f2f7; /* Light blue background */
+            margin: 0;
+            padding: 20px;
+            background-color: var(--light-sky-blue);
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #333; /* Default text color */
+            min-height: 100vh;
+            color: var(--black);
         }
 
-        /* Main Chat Container */
-        .chat-container {
-            max-width: 600px;
-            width: 95%;
-            height: 650px; /* Slightly increased height for better spacing */
-            background: #ffffff;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        #chat-container {
+            max-width: 800px;
+            width: 100%;
+            background-color: var(--white);
+            padding: 30px;
             border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            gap: 20px;
         }
 
-        /* Title */
         h1 {
             text-align: center;
-            color: #007bff; /* Blue title */
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 1.8em;
+            color: var(--dark-blue);
+            margin-bottom: 15px;
             font-weight: 700;
-            flex-shrink: 0;
         }
 
-        /* Messages Display Area */
-        .messages {
-            flex-grow: 1; /* Allows messages area to take available space */
-            overflow-y: auto; /* Scroll only when content overflows */
-            padding: 10px;
-            border: 1px solid #e0e0e0;
+        #chat-log {
+            height: 450px;
+            overflow-y: auto;
+            border: 1px solid var(--medium-grey);
+            padding: 15px;
             border-radius: 8px;
-            background-color: #f9f9f9; /* Very light grey for message background */
-            margin-bottom: 15px;
+            background-color: var(--light-grey);
             display: flex;
             flex-direction: column;
-            gap: 10px; /* Space between messages */
-        }
-
-        /* Scrollbar Styling (for Webkit browsers) */
-        .messages::-webkit-scrollbar {
-            width: 8px;
-        }
-        .messages::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        .messages::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-        .messages::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
-        /* Message Input Section */
-        .message-input {
-            display: flex;
-            width: 100%;
-            flex-shrink: 0;
-            align-items: center;
             gap: 10px;
         }
 
-        .message-input input {
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--primary-blue);
+            color: var(--white);
+            border-bottom-right-radius: 5px; /* Slightly less rounded corner */
+        }
+
+        .learniamo-message {
+            align-self: flex-start;
+            background-color: var(--dark-blue);
+            color: var(--white);
+            border-bottom-left-radius: 5px; /* Slightly less rounded corner */
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #message-input {
             flex-grow: 1;
             padding: 12px 15px;
-            border: 1px solid #ccc;
-            border-radius: 25px; /* Rounded input field */
-            font-size: 1rem;
-            min-width: 0;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .message-input input:focus {
-            border-color: #007bff;
-        }
-
-        .message-input button {
-            padding: 12px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 25px; /* Rounded buttons */
-            cursor: pointer;
-            font-size: 1rem;
-            white-space: nowrap;
-            flex-shrink: 0;
-            transition: background-color 0.3s, transform 0.1s;
-        }
-
-        .message-input button:hover:not(:disabled) {
-            background-color: #0056b3;
-            transform: translateY(-1px);
-        }
-
-        .message-input button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        /* Recording status indicator */
-        .recording-indicator {
-            background-color: #dc3545; /* Red for recording */
-            color: white;
-            font-weight: bold;
+            border: 1px solid var(--medium-grey);
             border-radius: 25px;
-            padding: 8px 15px;
-            margin-left: 10px;
-            display: none; /* Hidden by default */
-            align-items: center;
-            justify-content: center;
-            animation: pulse 1s infinite alternate;
-            font-size: 0.9em;
-        }
-
-        @keyframes pulse {
-            from { opacity: 1; }
-            to { opacity: 0.7; }
-        }
-
-        /* Message Bubble Styling */
-        .message-bubble {
-            padding: 10px 15px;
-            border-radius: 18px; /* More rounded corners for bubbles */
-            max-width: 80%;
-            word-wrap: break-word;
-            line-height: 1.5;
-            font-size: 0.95em;
-        }
-
-        /* User Message Styling */
-        .user-message {
-            align-self: flex-end; /* Align to the right */
-            background-color: #007bff; /* Blue for user messages */
-            color: white;
-            border-bottom-right-radius: 4px; /* Slightly less rounded on the bottom-right for user */
-        }
-
-        /* Bot Message Styling */
-        .bot-message {
-            align-self: flex-start; /* Align to the left */
-            background-color: #e9ecef; /* Light grey for bot messages */
-            color: #333;
-            border-bottom-left-radius: 4px; /* Slightly less rounded on the bottom-left for bot */
-        }
-
-        .bot-message p {
-            margin: 0; /* Remove default paragraph margins */
-            padding: 0;
-        }
-        .bot-message audio {
-            width: 100%;
-            margin-top: 10px;
-            border-radius: 5px;
+            font-size: 16px;
             outline: none;
+            transition: border-color 0.3s ease;
         }
 
-        /* --- Mobile Responsiveness (Media Queries) --- */
-        @media (max-width: 768px) {
-            html, body {
-                align-items: flex-start; /* Align to top on mobile */
-            }
-            .chat-container {
-                width: 100%;
-                height: 100vh; /* Full viewport height on mobile */
-                min-height: 100vh;
-                max-height: 100vh;
-                margin: 0;
-                border-radius: 0;
-                box-shadow: none;
-                padding: 15px;
-            }
-            .messages {
-                flex-grow: 1; /* Allow messages to take remaining space */
-                min-height: 0; /* Important for flex items with overflow */
-                overflow-y: auto; /* Use auto scroll on mobile for cleaner look */
-            }
-            .message-input {
-                flex-wrap: wrap; /* Allow buttons to wrap if needed */
-                justify-content: center; /* Center items when wrapped */
-            }
-            .message-input input {
-                flex-basis: 100%; /* Input takes full width on mobile */
-                margin-bottom: 10px;
-            }
-            .message-input button {
-                flex-basis: calc(50% - 5px); /* Two buttons per row on mobile */
-                margin-bottom: 5px; /* Space between wrapped buttons */
-            }
-            .recording-indicator {
-                flex-basis: 100%;
-                margin-left: 0;
-                margin-top: 5px;
-            }
+        #message-input:focus {
+            border-color: var(--primary-blue);
+        }
+
+        #send-button {
+            padding: 12px 25px;
+            background-color: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+            transform: translateY(-2px);
+        }
+
+        #send-button:active {
+            transform: translateY(0);
+        }
+
+        #loading-indicator {
+            display: none; /* Hidden by default */
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            color: var(--dark-blue);
+            font-style: italic;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h1>LEARNIAMO AI Assistant</h1>
-        <div class="messages" id="messages">
-            <!-- Chat messages will be appended here -->
-            <div class="bot-message message-bubble">
-                <p>Hello! I'm your LEARNIAMO AI Assistant. How can I help you today?</p>
-            </div>
-        </div>
-        <div class="message-input">
-            <input type="text" id="user-input" placeholder="Type your message...">
+    <div id="chat-container">
+        <h1>Chat with LEARNIAMO</h1>
+        <div id="chat-log"></div>
+        <div id="loading-indicator">LEARNIAMO is thinking...</div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Ask LEARNIAMO anything...">
             <button id="send-button">Send</button>
-            <button id="voice-button">Voice</button>
-            <div class="recording-indicator" id="recording-indicator">Recording...</div>
         </div>
     </div>
 
     <script>
-        const userInput = document.getElementById('user-input');
+        const chatLog = document.getElementById('chat-log');
+        const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const voiceButton = document.getElementById('voice-button');
-        const messagesDiv = document.getElementById('messages');
-        const recordingIndicator = document.getElementById('recording-indicator');
+        const loadingIndicator = document.getElementById('loading-indicator');
 
-        // Use window.location.origin for Cloud Run deployment
-        // For local testing, if your server runs on a different port, you might need to specify it:
-        // const API_BASE_URL = 'http://localhost:8080';
-        const API_BASE_URL = window.location.origin;
-
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
-
-        // Function to add a message to the chat display
-        function addMessage(sender, text, audioBase64 = null) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message-bubble'); // Apply common bubble styling
-            messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-
-            // Use innerHTML to allow for basic formatting (like bold, italics) if Gemini returns it
-            // For safety, if you expect user input to be displayed, use textContent for user messages
-            messageElement.innerHTML = text;
-
-            if (audioBase64) {
-                const audioElement = document.createElement('audio');
-                audioElement.controls = true;
-                audioElement.src = `data:audio/mp3;base64,${audioBase64}`;
-                audioElement.type = 'audio/mp3'; // Specify type for better browser compatibility
-                messageElement.appendChild(audioElement);
-                // Autoplay the audio if it's a bot message
-                if (sender === 'bot') {
-                    audioElement.play().catch(e => console.error("Audio autoplay failed:", e));
-                }
-            }
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
+        // Function to append messages to the chat log
+        function appendMessage(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-bubble');
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'learniamo-message');
+            messageDiv.innerText = message;
+            chatLog.appendChild(messageDiv);
+            chatLog.scrollTop = chatLog.scrollHeight; // Scroll to the bottom
         }
 
-        // Handle sending text messages
-        sendButton.addEventListener('click', async () => {
-            const message = userInput.value.trim();
-            if (message) {
-                addMessage('user', message);
-                userInput.value = ''; // Clear input
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
 
-                sendButton.disabled = true;
-                voiceButton.disabled = true;
-                userInput.disabled = true; // Disable input field
+        async function sendMessage() {
+            const userMessage = messageInput.value.trim();
+            if (userMessage === '') return;
 
-                try {
-                    const response = await fetch(`${API_BASE_URL}/chat`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ message: message }),
-                    });
+            appendMessage('user', userMessage);
+            messageInput.value = ''; // Clear input
+            sendButton.disabled = true; // Disable button to prevent multiple sends
+            messageInput.disabled = true; // Disable input
 
-                    const data = await response.json();
-                    if (response.ok) {
-                        addMessage('bot', data.reply);
-                    } else {
-                        addMessage('bot', `Error: ${data.error || 'Unknown error'}`);
-                    }
-                } catch (error) {
-                    console.error('Error sending text message:', error);
-                    addMessage('bot', `Network error: ${error.message}`);
-                } finally {
-                    sendButton.disabled = false;
-                    voiceButton.disabled = false;
-                    userInput.disabled = false; // Re-enable input field
-                    userInput.focus(); // Put focus back on input
+            loadingIndicator.style.display = 'block'; // Show loading indicator
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: userMessage }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const data = await response.json();
+                appendMessage('learniamo', data.reply);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                appendMessage('learniamo', 'Error: Could not get a response from LEARNIAMO. Please try again.');
+            } finally {
+                loadingIndicator.style.display = 'none'; // Hide loading indicator
+                sendButton.disabled = false; // Re-enable button
+                messageInput.disabled = false; // Re-enable input
+                messageInput.focus(); // Put focus back on the input field
             }
-        });
-
-        // Handle voice input
-        voiceButton.addEventListener('click', async () => {
-            if (!isRecording) {
-                // Start recording
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    // Ensure mimeType matches backend expectation (WEBM_OPUS)
-                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-
-                    mediaRecorder.ondataavailable = (event) => {
-                        audioChunks.push(event.data);
-                    };
-
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
-                        audioChunks = []; // Clear for next recording
-
-                        sendButton.disabled = true;
-                        voiceButton.disabled = true;
-                        userInput.disabled = true;
-                        recordingIndicator.style.display = 'none';
-
-                        addMessage('user', '<i>(Voice message sent...)</i>');
-
-                        try {
-                            const formData = new FormData();
-                            formData.append('audio', audioBlob, 'audio.webm'); // Filename is important for Multer
-
-                            const response = await fetch(`${API_BASE_URL}/voice`, {
-                                method: 'POST',
-                                body: formData,
-                            });
-
-                            const data = await response.json();
-                            if (response.ok) {
-                                addMessage('bot', data.reply, data.audio);
-                            } else {
-                                addMessage('bot', `Error: ${data.error || 'Unknown error'}`);
-                            }
-                        } catch (error) {
-                            console.error('Error sending voice message:', error);
-                            addMessage('bot', `Network error: ${error.message}`);
-                        } finally {
-                            sendButton.disabled = false;
-                            voiceButton.disabled = false;
-                            userInput.disabled = false;
-                            userInput.focus();
-                        }
-                    };
-
-                    mediaRecorder.start();
-                    isRecording = true;
-                    voiceButton.textContent = 'Stop Recording';
-                    recordingIndicator.style.display = 'flex';
-                    sendButton.disabled = true; // Disable send button during recording
-                    userInput.disabled = true; // Disable input field during recording
-                } catch (err) {
-                    console.error('Error accessing microphone:', err);
-                    alert('Could not access microphone. Please ensure it is connected and permissions are granted.');
-                    // Re-enable buttons if microphone access fails
-                    sendButton.disabled = false;
-                    voiceButton.disabled = false;
-                    userInput.disabled = false;
-                }
-            } else {
-                // Stop recording
-                mediaRecorder.stop();
-                isRecording = false;
-                voiceButton.textContent = 'Voice';
-                recordingIndicator.style.display = 'none';
-                sendButton.disabled = false; // Re-enable send button
-                userInput.disabled = false; // Re-enable input field
-            }
-        });
-
-        // Enable send button if user types
-        userInput.addEventListener('input', () => {
-            if (!isRecording) {
-                sendButton.disabled = userInput.value.trim() === '';
-            }
-        });
-
-        // Allow sending message with Enter key
-        userInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter' && !sendButton.disabled) {
-                sendButton.click();
-            }
-        });
-
-        // Initial state: disable send button if input is empty
-        sendButton.disabled = true;
+        }
     </script>
 </body>
 </html>
