@@ -32,4 +32,41 @@ app.post("/chat", async (req, res) => {
   if (!sessionId) {
     sessionId = uuidv4();
     res.cookie("sessionId", sessionId, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
-    sessions
+    sessions[sessionId] = [];
+  }
+
+  const history = sessions[sessionId];
+  const userMessage = req.body.message;
+  history.push({ role: "user", content: userMessage });
+
+  try {
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessageStream(userMessage);
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    let fullResponse = "";
+
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) {
+        fullResponse += text;
+        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+      }
+    }
+
+    history.push({ role: "model", content: fullResponse });
+    res.end();
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error communicating with Gemini API");
+  }
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
