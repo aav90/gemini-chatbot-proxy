@@ -19,12 +19,6 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 // ذخیره هیستوری برای هر سشن
 const sessions = {};
 
-// فرمت کردن متن برای نمایش در UI
-function formatTextForDisplay(text) {
-  if (!text) return "";
-  return text.trim().split("\n\n").map(p => `<p>${p.trim()}</p>`).join("");
-}
-
 // 📌 استریمینگ + هیستوری
 app.post("/chat", async (req, res) => {
   let sessionId = req.cookies.sessionId;
@@ -59,16 +53,13 @@ app.post("/chat", async (req, res) => {
 
     history.push({ role: "model", content: fullResponse });
     res.end();
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Error communicating with Gemini API");
   }
 });
-const PORT = process.env.PORT || 8080;
 
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-
-
