@@ -9,31 +9,41 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
+// اتصال به Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// ذخیره هیستوری برای هر سشن
+// هیستوری هر کاربر (با سشن)
 const sessions = {};
 
-// 📌 استریمینگ + هیستوری
+// 📌 استریمینگ + ذخیره هیستوری
 app.post("/chat", async (req, res) => {
   let sessionId = req.cookies.sessionId;
 
+  // اگر کوکی نبود → یه سشن جدید بساز
   if (!sessionId) {
     sessionId = uuidv4();
-    res.cookie("sessionId", sessionId, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // ۱ روز
+    });
     sessions[sessionId] = [];
   }
 
-  const history = sessions[sessionId];
+  const history = sessions[sessionId] || [];
   const userMessage = req.body.message;
 
-  history.push({ role: "user", content: userMessage });
+  // ذخیره پیام کاربر
+  history.push({ role: "user", parts: [{ text: userMessage }] });
 
   try {
+    // شروع چت با هیستوری
     const chat = model.startChat({ history });
+
+    // استریم نتیجه
     const result = await chat.sendMessageStream(userMessage);
 
+    // تنظیمات SSE
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -48,14 +58,18 @@ app.post("/chat", async (req, res) => {
       }
     }
 
-    history.push({ role: "model", content: fullResponse });
-    res.end();
+    // ذخیره پاسخ مدل در هیستوری
+    history.push({ role: "model", parts: [{ text: fullResponse }] });
 
+    // آپدیت دوباره سشن
+    sessions[sessionId] = history;
+
+    res.end();
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error:", error);
     res.status(500).send("Error communicating with Gemini API");
   }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =
