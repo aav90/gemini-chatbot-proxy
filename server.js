@@ -1,35 +1,71 @@
-import express from 'express';
-import cors from 'cors';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+require('dotenv').config(); // Load environment variables from .env file
 
 const app = express();
-app.use(express.json());
-app.use(cors({ origin: ['https://learniamo.com', 'https://www.learniamo.com'] }));
+const port = 3000;
 
+// Middleware to parse JSON bodies
+app.use(express.json());
+// Serve static files from the current directory (for index.html)
 app.use(express.static(__dirname));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// Access your API key as an environment variable
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+if (!GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY is not set in environment variables.');
+    process.exit(1);
+}
+
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+// Define the model
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+// This will store the conversation history for a single user/session.
+// For a multi-user application, you would need a more robust storage solution
+// (e.g., a database, session management, or session-specific history).
+// For this example, it's a simple in-memory array that resets when the server restarts.
+let conversationHistory = [];
 
 app.post('/chat', async (req, res) => {
-  try {
-    const { message } = req.body;
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const userMessage = req.body.message;
 
-    const result = await model.generateContent(message);
-    res.json({ reply: result.response.text() });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: String(err) });
-  }
+    if (!userMessage) {
+        return res.status(400).json({ error: 'Message is required' });
+    }
+
+    try {
+        // Add the user's message to the conversation history
+        conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+        // Initialize chat with the current conversation history
+        const chat = model.startChat({
+            history: conversationHistory,
+            generationConfig: {
+                maxOutputTokens: 2000, // Adjust as needed
+                // Instruct Gemini to prefer markdown for better readability
+                responseMimeType: "text/markdown", 
+            },
+        });
+
+        // Send the current message to the model
+        const result = await chat.sendMessage(userMessage);
+        const response = result.response;
+        const geminiReply = response.text();
+
+        // Add Gemini's reply to the conversation history
+        conversationHistory.push({ role: "model", parts: [{ text: geminiReply }] });
+
+        res.json({ reply: geminiReply });
+
+    } catch (error) {
+        console.error('Error interacting with Gemini API:', error);
+        res.status(500).json({ error: 'Failed to get response from LEARNIAMO API.' });
+    }
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
+});
