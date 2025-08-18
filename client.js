@@ -49,11 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     userInput.placeholder = enabled ? "Type your message..." : "Processing...";
   }
 
-  sendButton.addEventListener('click', sendMessage);
-  userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-  });
-
   async function sendMessage() {
     const message = userInput.value.trim();
     if (!message) return;
@@ -70,9 +65,33 @@ document.addEventListener('DOMContentLoaded', () => {
         credentials: "include",
         body: JSON.stringify({ message })
       });
-      const data = await response.json();
-      hideTyping();
-      addMessage(data.reply, 'bot');
+
+      // بررسی می‌کنیم اگر سرور استریم می‌کنه
+      if (response.headers.get("Content-Type")?.includes("text/event-stream")) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split("\n\n").filter(Boolean);
+          lines.forEach(line => {
+            if (line.startsWith("data:")) {
+              const data = JSON.parse(line.replace(/^data:\s*/, ""));
+              fullText += data.text;
+              hideTyping();
+              addMessage(data.text, 'bot');
+            }
+          });
+        }
+      } else {
+        const data = await response.json();
+        hideTyping();
+        addMessage(data.reply, 'bot');
+      }
+
     } catch (err) {
       console.error(err);
       hideTyping();
@@ -82,6 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  sendButton.addEventListener('click', sendMessage);
+  userInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
   voiceButton.addEventListener('click', async () => {
     if (!isRecording) {
       try {
@@ -89,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
         audioChunks = [];
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
         mediaRecorder.onstop = async () => {
           setUIState(false);
           recordingIndicator.style.display = 'none';
@@ -103,9 +128,16 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const resp = await fetch('/voice', { method: 'POST', body: formData, credentials: "include" });
             const data = await resp.json();
+
             hideTyping();
-            const botAudioBlob = new Blob([Uint8Array.from(atob(data.audio), c => c.charCodeAt(0))], { type: 'audio/mp3' });
-            addMessage(data.reply, 'bot', botAudioBlob);
+
+            if (data.audio) {
+              const botAudioBlob = new Blob([Uint8Array.from(atob(data.audio), c => c.charCodeAt(0))], { type: 'audio/mp3' });
+              addMessage(data.reply, 'bot', botAudioBlob);
+            } else {
+              addMessage(data.reply, 'bot');
+            }
+
           } catch (err) {
             console.error(err);
             hideTyping();
@@ -113,8 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
           } finally {
             setUIState(true);
           }
+
           stream.getTracks().forEach(t => t.stop());
         };
+
         mediaRecorder.start();
         isRecording = true;
         voiceButton.textContent = 'Stop';
