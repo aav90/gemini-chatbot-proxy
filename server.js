@@ -49,9 +49,8 @@ app.post('/chat', async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    // Note: "gemini-2.0-flash" is not a standard model ID.
-    // Use "gemini-pro" for text-only, or "gemini-1.5-flash" for newer versions if you have access.
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" }); 
+    // --- FIX: Changed model name from "gemini-pro" to "gemini-1.0-pro" ---
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" }); 
 
     const result = await model.generateContent(message);
     res.json({ reply: result.response.text() });
