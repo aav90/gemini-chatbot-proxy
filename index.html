@@ -71,56 +71,33 @@
             flex-shrink: 0; /* Prevent input from shrinking */
             align-items: center;
             height: 45px; /* Fixed approximate height for input */
-            gap: 10px; /* Space between input and buttons */
         }
 
         .message-input input {
             flex-grow: 1;
             padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 4px; /* Unified border-radius */
+            border-radius: 4px 0 0 4px;
             font-size: 1rem;
             min-width: 0;
         }
 
         .message-input button {
-            padding: 12px 15px; /* Adjusted padding for consistency */
+            padding: 12px 20px;
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 4px; /* Unified border-radius */
+            border-radius: 0 4px 4px 0;
             cursor: pointer;
             font-size: 1rem;
             white-space: nowrap;
             flex-shrink: 0;
+            min-width: 80px;
+            text-align: center;
         }
 
-        .message-input button:hover:not(:disabled) {
+        .message-input button:hover {
             background-color: #0056b3;
-        }
-
-        .message-input button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        /* Recording status indicator */
-        .recording-indicator {
-            background-color: red;
-            color: white;
-            font-weight: bold;
-            border-radius: 4px;
-            padding: 5px 10px;
-            margin-left: 10px;
-            display: none; /* Hidden by default */
-            align-items: center;
-            justify-content: center;
-            animation: pulse 1s infinite alternate; /* Simple pulse animation */
-        }
-
-        @keyframes pulse {
-            from { opacity: 1; }
-            to { opacity: 0.5; }
         }
 
         /* User Message Styling */
@@ -169,7 +146,7 @@
             }
             .chat-container {
                 width: 100%;
-                height: 100vh; /* Full viewport height on mobile */
+                height: 100vh; /* Mobile: full viewport height */
                 min-height: 100vh;
                 max-height: 100vh;
                 margin: 0;
@@ -188,14 +165,15 @@
             }
             .message-input {
                 height: auto;
-                flex-wrap: wrap; /* Allow buttons to wrap if needed */
             }
-            .message-input input {
-                flex-basis: 100%; /* Input takes full width on mobile */
-                margin-bottom: 10px;
-            }
+
+            .message-input input,
             .message-input button {
-                flex-basis: calc(50% - 5px); /* Two buttons per row on mobile */
+                padding: 10px;
+                font-size: 0.95rem;
+            }
+            .user-message, .bot-message {
+                max-width: 90%;
             }
         }
     </style>
@@ -206,172 +184,92 @@
         <div class="messages" id="messages"></div>
         <div class="message-input">
             <input type="text" id="userInput" placeholder="Ask a language question..." onkeypress="if(event.keyCode === 13) sendMessage()">
-            <button id="sendButton" onclick="sendMessage()">Send</button>
-            <button id="recordButton" onclick="startRecording()">🎤 Start</button>
-            <span id="recordingIndicator" class="recording-indicator">REC</span>
+            <button onclick="sendMessage()">Send</button>
         </div>
     </div>
 
     <script>
         const messagesDiv = document.getElementById('messages');
         const userInput = document.getElementById('userInput');
-        const sendButton = document.getElementById('sendButton');
-        const recordButton = document.getElementById('recordButton');
-        const recordingIndicator = document.getElementById('recordingIndicator');
         const chatHistoryKey = 'chatHistory';
 
         let chatHistory = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
 
-        // Helper to manage button states (disable/enable)
-        function setButtonsEnabled(enabled) {
-            sendButton.disabled = !enabled;
-            recordButton.disabled = !enabled;
-            userInput.disabled = !enabled;
+        function convertMarkdownToHtml(markdownText) {
+            let html = markdownText
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/\n/g, '<br/>');
+            return html;
         }
 
-        // Helper to add message to UI and handle basic markdown
-        function addMessage(text, className) {
-            const el = document.createElement('div');
-            el.className = className;
-            // Convert basic markdown to HTML for better readability
-            let formattedText = text
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')     // Italic
-                .replace(/\n/g, '<br/>');                 // Newlines
-            el.innerHTML = formattedText;
-            messagesDiv.appendChild(el);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
-        }
+        function addMessage(text, className, useInnerHTML = false) {
+            const msgElement = document.createElement('div');
+            msgElement.classList.add(className);
 
-        // Display chat history on load
-        function displayChatHistory() {
-            messagesDiv.innerHTML = '';
-            chatHistory.forEach(message => {
-                addMessage(message.text, message.className);
-            });
+            if (useInnerHTML) {
+                msgElement.innerHTML = text;
+            } else {
+                msgElement.textContent = text;
+            }
+            messagesDiv.appendChild(msgElement);
+            // Manually scroll to bottom after adding a message
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-        displayChatHistory();
 
-        // Text chat functionality
+        function displayChatHistory() {
+            messagesDiv.innerHTML = ''; // Clear messages before repopulating
+            chatHistory.forEach(message => {
+                if (message.className === 'bot-message') {
+                    addMessage(convertMarkdownToHtml(message.text), message.className, true);
+                } else {
+                    addMessage(message.text, message.className, false);
+                }
+            });
+            // Ensure scroll to bottom after displaying history
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        displayChatHistory(); // Call once on load to display history
+
         async function sendMessage() {
-            const msg = userInput.value.trim();
-            if (!msg) return;
+            const message = userInput.value.trim();
+            if (message === '') return;
 
-            addMessage(msg, 'user-message'); // Add user message immediately
-            chatHistory.push({ text: msg, className: 'user-message' }); // Save to history
+            addMessage(message, 'user-message', false); // Add user message and scroll
+            chatHistory.push({ text: message, className: 'user-message' });
             localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
-            userInput.value = ''; // Clear input
-
-            setButtonsEnabled(false); // Disable buttons during processing
+            userInput.value = ''; // Clear input immediately
 
             try {
-                // Use the full Cloud Run service URL
-                const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/chat', {
+                const response = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
                 });
 
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
                 }
-                const data = await res.json();
-                addMessage(data.reply, 'bot-message'); // Add bot response after it's received
-                chatHistory.push({ text: data.reply, className: 'bot-message' }); // Save to history
+
+                const data = await response.json();
+                const rawBotReply = data.reply;
+
+                const formattedBotReply = convertMarkdownToHtml(rawBotReply);
+                addMessage(formattedBotReply, 'bot-message', true); // Add bot message and scroll
+
+                chatHistory.push({ text: rawBotReply, className: 'bot-message' });
                 localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
 
             } catch (error) {
-                console.error('Text chat error:', error);
-                addMessage('Error: Could not get a response. Please try again.', 'bot-message');
-            } finally {
-                setButtonsEnabled(true); // Re-enable buttons
+                console.error('Error sending message:', error);
+                addMessage('Error: Could not get a response from the assistant. Please try again.', 'bot-message', false); // Add error message and scroll
             }
-        }
-
-        // Voice chat functionality
-        async function startRecording() {
-            if (isRecording) {
-                // If already recording, stop it
-                mediaRecorder.stop();
-                return;
-            }
-
-            setButtonsEnabled(false); // Disable buttons
-            recordButton.textContent = '⏹️ Stop';
-            recordingIndicator.style.display = 'flex'; // Show recording indicator
-            isRecording = true;
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // Use audio/webm;codecs=opus for better compatibility and compression
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-
-                mediaRecorder.onstop = async () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' }); // Ensure WEBM_OPUS type
-                    const formData = new FormData();
-                    formData.append('audio', blob, 'voice.webm'); // Use .webm extension
-
-                    // Add a "Thinking..." message for user feedback
-                    addMessage('Thinking...', 'bot-message');
-
-                    try {
-                        // Use the full Cloud Run service URL
-                        const res = await fetch('https://gemini-chatbot-proxy-653233019960.europe-west1.run.app/voice', {
-                            method: 'POST',
-                            body: formData
-                        });
-
-                        if (!res.ok) {
-                            throw new Error(`HTTP error! status: ${res.status}`);
-                        }
-                        const data = await res.json();
-
-                        // Remove "Thinking..." message and add the actual bot response
-                        if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
-                            messagesDiv.lastChild.remove();
-                        }
-                        addMessage(data.reply, 'bot-message');
-                        chatHistory.push({ text: data.reply, className: 'bot-message' }); // Save to history
-                        localStorage.setItem(chatHistoryKey, JSON.stringify(chatHistory));
-
-                        // Play the audio response
-                        const audio = new Audio('data:audio/mp3;base64,' + data.audio);
-                        audio.play();
-                    } catch (error) {
-                        console.error('Voice chat error:', error);
-                        // Remove "Thinking..." message if error occurs
-                        if (messagesDiv.lastChild && messagesDiv.lastChild.textContent === 'Thinking...') {
-                            messagesDiv.lastChild.remove();
-                        }
-                        addMessage('Error processing voice. Please try again.', 'bot-message');
-                    } finally {
-                        // Reset UI state
-                        setButtonsEnabled(true);
-                        recordButton.textContent = '🎤 Start';
-                        recordingIndicator.style.display = 'none';
-                        isRecording = false;
-                    }
-                };
-
-                mediaRecorder.start();
-                // No automatic stop here; user clicks 'Stop' or it stops after 5 seconds of silence (browser default)
-            } catch (error) {
-                console.error('Microphone access denied or other recording error:', error);
-                addMessage('Microphone access denied or error starting recording. Please ensure microphone permissions are granted.', 'bot-message');
-                // Reset UI state even if recording fails to start
-                setButtonsEnabled(true);
-                recordButton.textContent = '🎤 Start';
-                recordingIndicator.style.display = 'none';
-                isRecording = false;
-            }
+            // No need for messagesDiv.scrollTop here, addMessage handles it.
         }
     </script>
 </body>
