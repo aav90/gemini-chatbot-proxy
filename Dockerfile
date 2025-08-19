@@ -1,8 +1,8 @@
-{
-  "name": "gemini-chatbot-proxy",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  }
+FROM node:20-slim
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --production
+
+COPY . .
+CMD ["node", "server.js"]
