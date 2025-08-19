@@ -5,74 +5,227 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEARNIAMO AI Chatbot</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
+        /* Define CSS Variables for your theme */
+        :root {
+            --primary-blue: #007bff; /* A vibrant blue for accents */
+            --light-sky-blue: #e0f2f7; /* Light sky blue for background */
+            --dark-blue: #003366; /* Darker blue for text/elements */
+            --black: #1a1a1a; /* Near black for main text */
+            --white: #ffffff;
+            --light-grey: #f8f9fa;
+            --medium-grey: #dee2e6;
+            --red-alert: #dc3545; /* For recording indicator */
+
+            /* Specific message bubble background colors for readability */
+            --user-bubble-bg: #ADD8E6; /* Light Blue for user messages */
+            --learniamo-bubble-bg: #90EE90; /* Light Green for LEARNIAMO messages */
         }
+
+        body {
+            font-family: 'Roboto', sans-serif; /* Using Roboto for a modern look */
+            margin: 0;
+            padding: 20px;
+            background-color: var(--light-sky-blue);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--black);
+            overflow: hidden; /* Prevent body scrollbars */
+        }
+
         #chat-container {
             max-width: 800px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: 90vh; /* Make it take up more vertical space */
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
+
+        h1 {
+            text-align: center;
+            color: var(--dark-blue);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
         #chat-log {
-            height: 400px;
-            overflow-y: scroll;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            background-color: #e9e9e9;
+            flex-grow: 1; /* Allows chat log to fill available space */
+            overflow-y: auto;
+            border: 1px solid var(--medium-grey);
+            padding: 15px;
+            border-radius: 8px;
+            background-color: var(--light-grey);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
+
+        /* Custom Scrollbar */
+        #chat-log::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-log::-webkit-scrollbar-track {
+            background: var(--light-grey);
+            border-radius: 10px;
+        }
+        #chat-log::-webkit-scrollbar-thumb {
+            background: var(--medium-grey);
+            border-radius: 10px;
+        }
+        #chat-log::-webkit-scrollbar-thumb:hover {
+            background: #a0a0a0;
+        }
+
+        .message-bubble {
+            max-width: 75%; /* Adjusted for better appearance */
+            padding: 10px 15px;
+            border-radius: 15px; /* Slightly less rounded for a cleaner look */
+            line-height: 1.5;
+            word-wrap: break-word;
+            font-size: 0.95em;
+            color: var(--black); /* Ensure text is black for readability on light backgrounds */
+        }
+
+        .message-bubble p {
+            margin: 0; /* Remove default paragraph margins */
+            padding: 0;
+            margin-bottom: 5px; /* Space between paragraphs in bot message */
+        }
+        .message-bubble p:last-child {
+            margin-bottom: 0; /* No margin after the last paragraph */
+        }
+
         .user-message {
-            text-align: right;
-            color: blue;
-            margin-bottom: 5px;
+            align-self: flex-end;
+            background-color: var(--user-bubble-bg); /* User message background */
+            border-bottom-right-radius: 5px; /* Slightly less rounded corner */
         }
-        .bot-message {
-            text-align: left;
-            color: green;
-            margin-bottom: 5px;
+
+        .learniamo-message {
+            align-self: flex-start;
+            background-color: var(--learniamo-bubble-bg); /* LEARNIAMO message background */
+            border-bottom-left-radius: 5px; /* Slightly less rounded corner */
         }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0; /* Prevent input area from shrinking */
+        }
+
         #message-input {
-            width: calc(100% - 100px);
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-right: 10px;
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--medium-grey);
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
         }
-        #send-button {
-            padding: 8px 15px;
-            background-color: #007bff;
-            color: white;
+
+        #message-input:focus {
+            border-color: var(--primary-blue);
+        }
+
+        #send-button { /* Specific styling for send button */
+            padding: 12px 25px; /* Increased padding for bigger button */
+            background-color: var(--primary-blue);
+            color: var(--white);
             border: none;
-            border-radius: 4px;
+            border-radius: 25px;
             cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-shrink: 0; /* Prevent button from shrinking */
         }
-        #send-button:hover {
-            background-color: #0056b3;
+
+        .input-area button:hover:not(:disabled) {
+            background-color: #0056b3; /* Darker shade on hover */
+            transform: translateY(-2px);
         }
+
+        .input-area button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .input-area button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
         #loading-indicator {
             display: none; /* Hidden by default */
             text-align: center;
             padding: 10px;
             font-weight: bold;
-            color: #555;
+            color: var(--dark-blue);
+            font-style: italic;
+            flex-shrink: 0;
+        }
+
+        /* Removed recording status for this version as voice is not in this index.html */
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                min-height: 100vh; /* Ensure full height on mobile */
+                align-items: flex-start; /* Align to top on mobile */
+            }
+
+            #chat-container {
+                height: 100vh; /* Full viewport height on mobile */
+                border-radius: 0;
+                box-shadow: none;
+                padding: 15px;
+                gap: 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .input-area {
+                flex-wrap: wrap;
+            }
+
+            #message-input {
+                flex-basis: 100%;
+                margin-bottom: 10px;
+            }
+
+            #send-button { /* Make send button full width on mobile if needed */
+                flex-basis: 100%;
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
         }
     </style>
+    <!-- Google Fonts for a modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="chat-container">
         <h1>Chat with LEARNIAMO</h1>
         <div id="chat-log">
-            <div class="bot-message">Hello! I'm LEARNIAMO. How can I help you today?</div>
+            <div class="message-bubble learniamo-message">
+                <p>Hello! I'm LEARNIAMO. How can I help you today?</p>
+            </div>
         </div>
         <div id="loading-indicator">LEARNIAMO is thinking...</div>
-        <input type="text" id="message-input" placeholder="Type your message...">
-        <button id="send-button">Send</button>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
     </div>
 
     <script>
@@ -84,8 +237,10 @@
         // Function to append messages to the chat log
         function appendMessage(sender, message) {
             const messageDiv = document.createElement('div');
-            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-            messageDiv.innerText = message;
+            messageDiv.classList.add('message-bubble');
+            // Apply specific classes for styling
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'learniamo-message');
+            messageDiv.innerText = message; // Use innerText for plain text messages
             chatLog.appendChild(messageDiv);
             chatLog.scrollTop = chatLog.scrollHeight; // Scroll to the bottom
         }
@@ -123,10 +278,13 @@
                 }
 
                 const data = await response.json();
-                appendMessage('bot', data.reply);
+                // Assuming data.reply might contain HTML from server.js's formatGeminiResponseForDisplay
+                // If it's plain text, innerText is fine. If it's HTML, use innerHTML.
+                // For this basic version, we'll stick to innerText for simplicity.
+                appendMessage('learniamo', data.reply); 
             } catch (error) {
                 console.error('Error sending message:', error);
-                appendMessage('bot', 'Error: Could not get a response from LEARNIAMO. Please try again. (' + error.message + ')');
+                appendMessage('learniamo', 'Error: Could not get a response from LEARNIAMO. Please try again. (' + error.message + ')');
             } finally {
                 loadingIndicator.style.display = 'none'; // Hide loading indicator
                 sendButton.disabled = false; // Re-enable button
