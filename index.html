@@ -135,8 +135,8 @@
             border-color: var(--primary-blue);
         }
 
-        #send-button { /* Specific styling for send button */
-            padding: 12px 25px; /* Increased padding for bigger button */
+        #send-button {
+            padding: 12px 25px;
             background-color: var(--primary-blue);
             color: var(--white);
             border: none;
@@ -149,7 +149,7 @@
         }
 
         .input-area button:hover:not(:disabled) {
-            background-color: #0056b3; /* Darker shade on hover */
+            background-color: #0056b3;
             transform: translateY(-2px);
         }
 
@@ -163,7 +163,7 @@
         }
 
         #loading-indicator {
-            display: none; /* Hidden by default */
+            display: none;
             text-align: center;
             padding: 10px;
             font-weight: bold;
@@ -172,18 +172,15 @@
             flex-shrink: 0;
         }
 
-        /* Removed recording status for this version as voice is not in this index.html */
-
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
-                min-height: 100vh; /* Ensure full height on mobile */
-                align-items: flex-start; /* Align to top on mobile */
+                min-height: 100vh;
+                align-items: flex-start;
             }
 
             #chat-container {
-                height: 100vh; /* Full viewport height on mobile */
+                height: 100vh;
                 border-radius: 0;
                 box-shadow: none;
                 padding: 15px;
@@ -195,21 +192,19 @@
             }
 
             .input-area {
-                flex-direction: column; /* Stack items vertically on mobile */
-                align-items: stretch; /* Stretch items to fill width */
-                gap: 10px; /* Space between stacked items */
+                flex-direction: column; /* Stack input and button */
+                align-items: stretch; /* Make items fill the container width */
             }
 
             #message-input {
-                width: auto; /* Allow flex to manage width */
-                flex-basis: auto; /* Allow flex to manage basis */
-                margin-bottom: 0; /* Remove margin-bottom if stacking */
+                width: 100%; /* Input takes full width */
+                margin-bottom: 10px; /* Add some space below the input */
             }
 
             #send-button {
-                width: 100%; /* Make send button full width on mobile */
-                padding: 12px 15px; /* Adjust padding if needed */
-                font-size: 1em; /* Adjust font size if needed */
+                width: 100%; /* Button takes full width */
+                padding: 15px; /* Increase padding for better touch experience */
+                font-size: 1.1em; /* Slightly larger font size */
             }
         }
     </style>
@@ -241,11 +236,10 @@
         function appendMessage(sender, message) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message-bubble');
-            // Apply specific classes for styling
             messageDiv.classList.add(sender === 'user' ? 'user-message' : 'learniamo-message');
-            messageDiv.innerText = message; // Use innerText for plain text messages
+            messageDiv.innerText = message;
             chatLog.appendChild(messageDiv);
-            chatLog.scrollTop = chatLog.scrollHeight; // Scroll to the bottom
+            chatLog.scrollTop = chatLog.scrollHeight;
         }
 
         sendButton.addEventListener('click', sendMessage);
@@ -260,11 +254,11 @@
             if (userMessage === '') return;
 
             appendMessage('user', userMessage);
-            messageInput.value = ''; // Clear input
+            messageInput.value = '';
 
-            loadingIndicator.style.display = 'block'; // Show loading indicator
-            sendButton.disabled = true; // Disable button
-            messageInput.disabled = true; // Disable input
+            loadingIndicator.style.display = 'block';
+            sendButton.disabled = true;
+            messageInput.disabled = true;
 
             try {
                 const response = await fetch('/chat', {
@@ -281,20 +275,19 @@
                 }
 
                 const data = await response.json();
-                // Assuming data.reply might contain HTML from server.js's formatGeminiResponseForDisplay
-                // If it's plain text, innerText is fine. If it's HTML, use innerHTML.
-                // For this basic version, we'll stick to innerText for simplicity.
-                appendMessage('learniamo', data.reply); 
+                appendMessage('learniamo', data.reply);
             } catch (error) {
                 console.error('Error sending message:', error);
                 appendMessage('learniamo', 'Error: Could not get a response from LEARNIAMO. Please try again. (' + error.message + ')');
             } finally {
-                loadingIndicator.style.display = 'none'; // Hide loading indicator
-                sendButton.disabled = false; // Re-enable button
-                messageInput.disabled = false; // Re-enable input
-                messageInput.focus(); // Focus input
+                loadingIndicator.style.display = 'none';
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
             }
         }
     </script>
 </body>
 </html>
+
+<!--<serializedDesign>{}</serializedDesign>-->
