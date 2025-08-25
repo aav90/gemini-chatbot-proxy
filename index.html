@@ -195,18 +195,21 @@
             }
 
             .input-area {
-                flex-wrap: wrap;
+                flex-direction: column; /* Stack items vertically on mobile */
+                align-items: stretch; /* Stretch items to fill width */
+                gap: 10px; /* Space between stacked items */
             }
 
             #message-input {
-                flex-basis: 100%;
-                margin-bottom: 10px;
+                width: auto; /* Allow flex to manage width */
+                flex-basis: auto; /* Allow flex to manage basis */
+                margin-bottom: 0; /* Remove margin-bottom if stacking */
             }
 
-            #send-button { /* Make send button full width on mobile if needed */
-                flex-basis: 100%;
-                padding: 10px 15px;
-                font-size: 0.9em;
+            #send-button {
+                width: 100%; /* Make send button full width on mobile */
+                padding: 12px 15px; /* Adjust padding if needed */
+                font-size: 1em; /* Adjust font size if needed */
             }
         }
     </style>
