@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEARNIAMO AI Chatbot</title>
     <style>
+        /* Universal box-sizing for consistent layout */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         /* Define CSS Variables for your theme */
         :root {
             --primary-blue: #007bff; /* A vibrant blue for accents */
@@ -24,7 +29,7 @@
         body {
             font-family: 'Roboto', sans-serif; /* Using Roboto for a modern look */
             margin: 0;
-            padding: 20px;
+            padding: 20px; /* Default padding for larger screens */
             background-color: var(--light-sky-blue);
             display: flex;
             justify-content: center;
@@ -37,7 +42,7 @@
         #chat-container {
             max-width: 800px;
             width: 100%;
-            height: 90vh; /* Make it take up more vertical space */
+            height: 90vh; /* Default height for larger screens */
             background-color: var(--white);
             padding: 30px;
             border-radius: 12px;
@@ -174,16 +179,16 @@
 
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                padding: 0; /* Remove body padding on mobile to maximize space */
                 min-height: 100vh;
                 align-items: flex-start;
             }
 
             #chat-container {
-                height: 100vh;
+                height: 100vh; /* Take full viewport height */
                 border-radius: 0;
                 box-shadow: none;
-                padding: 15px;
+                padding: 15px; /* Keep internal padding */
                 gap: 15px;
             }
 
@@ -289,5 +294,3 @@
     </script>
 </body>
 </html>
-
-<!--<serializedDesign>{}</serializedDesign>-->
