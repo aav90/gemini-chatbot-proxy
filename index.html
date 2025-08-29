@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LEARNIAMO AI Chatbot</title>
+    <title>LEARNIAMO AI Chatbot & Tools</title>
     <style>
         /* Universal box-sizing for consistent layout */
         *, *::before, *::after {
@@ -32,27 +32,33 @@
             padding: 20px; /* Default padding for larger screens */
             background-color: var(--light-sky-blue);
             display: flex;
+            flex-direction: column; /* Allow vertical stacking of sections */
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             color: var(--black);
-            overflow: hidden; /* Prevent body scrollbars */
+            overflow-x: hidden; /* Prevent horizontal scrollbars */
+            gap: 30px; /* Space between sections */
         }
 
-        #chat-container {
+        #chat-container, .tool-section {
             max-width: 800px;
             width: 100%;
-            height: 90vh; /* Default height for larger screens */
             background-color: var(--white);
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
+        }
+
+        #chat-container {
+            height: 90vh; /* Default height for larger screens */
+            min-height: 500px; /* Ensure a minimum height */
             gap: 20px;
         }
 
-        h1 {
+        h1, .tool-section h2 {
             text-align: center;
             color: var(--dark-blue);
             margin-top: 0;
@@ -126,7 +132,7 @@
             flex-shrink: 0; /* Prevent input area from shrinking */
         }
 
-        #message-input {
+        #message-input, .tool-section input[type="text"] {
             flex-grow: 1;
             padding: 12px 15px;
             border: 1px solid var(--medium-grey);
@@ -136,11 +142,11 @@
             transition: border-color 0.3s ease;
         }
 
-        #message-input:focus {
+        #message-input:focus, .tool-section input[type="text"]:focus {
             border-color: var(--primary-blue);
         }
 
-        #send-button {
+        #send-button, .tool-section button {
             padding: 12px 25px;
             background-color: var(--primary-blue);
             color: var(--white);
@@ -153,21 +159,29 @@
             flex-shrink: 0; /* Prevent button from shrinking */
         }
 
-        .input-area button:hover:not(:disabled) {
+        .tool-section button.generate-image-button {
+            background-color: #28a745; /* Green for image button */
+        }
+        .tool-section button.generate-image-button:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+
+        .input-area button:hover:not(:disabled), .tool-section button:hover:not(:disabled) {
             background-color: #0056b3;
             transform: translateY(-2px);
         }
 
-        .input-area button:active:not(:disabled) {
+        .input-area button:active:not(:disabled), .tool-section button:active:not(:disabled) {
             transform: translateY(0);
         }
 
-        .input-area button:disabled {
+        .input-area button:disabled, .tool-section button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
         }
 
-        #loading-indicator {
+        #loading-indicator, .tool-status {
             display: none;
             text-align: center;
             padding: 10px;
@@ -177,11 +191,45 @@
             flex-shrink: 0;
         }
 
+        /* Specific styles for tool sections */
+        .tool-section {
+            padding: 20px;
+            gap: 15px;
+            text-align: center;
+        }
+        .tool-section p {
+            margin: 0 0 10px 0;
+            color: #555;
+        }
+        .tool-section input {
+            border-radius: 5px; /* Slightly less rounded for tool inputs */
+            padding: 10px;
+        }
+        .tool-section button {
+            border-radius: 5px; /* Slightly less rounded for tool buttons */
+            padding: 10px 20px;
+            font-size: 15px;
+        }
+        #ttsAudio {
+            width: 100%;
+            margin-top: 15px;
+            display: none;
+        }
+        #imageDisplay img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+
         @media (max-width: 768px) {
             body {
                 padding: 0; /* Remove body padding on mobile to maximize space */
                 min-height: 100vh;
                 align-items: flex-start;
+                gap: 20px; /* Reduce gap on mobile */
             }
 
             #chat-container {
@@ -204,12 +252,27 @@
             #message-input {
                 width: 100%; /* Input takes full width */
                 margin-bottom: 10px; /* Add some space below the input */
+                border-radius: 25px; /* Match desktop chat input */
             }
 
             #send-button {
                 width: 100%; /* Button takes full width */
                 padding: 15px; /* Increase padding for better touch experience */
                 font-size: 1.1em; /* Slightly larger font size */
+                border-radius: 25px; /* Match desktop chat button */
+            }
+
+            .tool-section {
+                border-radius: 0; /* Full width on mobile */
+                box-shadow: none;
+                padding: 15px;
+            }
+
+            .tool-section input {
+                border-radius: 25px; /* Consistent rounded corners */
+            }
+            .tool-section button {
+                border-radius: 25px; /* Consistent rounded corners */
             }
         }
     </style>
@@ -231,7 +294,31 @@
         </div>
     </div>
 
+    <!-- For Text-to-Speech -->
+    <div class="tool-section">
+      <h2>Listen to LEARNIAMO</h2>
+      <p>Type your message below and click "Speak" to hear LEARNIAMO.</p>
+      <input type="text" id="ttsInput" placeholder="Enter text to speak...">
+      <button onclick="playTTS()">Speak</button>
+      <audio id="ttsAudio" controls></audio>
+      <p id="ttsStatus" class="tool-status"></p>
+    </div>
+
+    <!-- For Image Generation (Nano-Banana) -->
+    <div class="tool-section">
+      <h2>Generate an Image with LEARNIAMO</h2>
+      <p>Describe the image you want to create:</p>
+      <input type="text" id="imagePromptInput" placeholder="e.g., A majestic cat sitting on a cloud...">
+      <button onclick="generateImage()" class="generate-image-button">Generate Image</button>
+      <div id="imageDisplay">
+        <p id="imageStatus" class="tool-status" style="display: block;">No image generated yet.</p>
+      </div>
+    </div>
+
     <script>
+        // IMPORTANT: Your actual Cloud Run Service URL
+        const CLOUD_RUN_URL = "https://gemini-chatbot-proxy-653233019960.europe-west1.run.app"; 
+
         const chatLog = document.getElementById('chat-log');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
@@ -266,7 +353,7 @@
             messageInput.disabled = true;
 
             try {
-                const response = await fetch('/chat', {
+                const response = await fetch(`${CLOUD_RUN_URL}/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -289,6 +376,91 @@
                 sendButton.disabled = false;
                 messageInput.disabled = false;
                 messageInput.focus();
+            }
+        }
+
+        // --- Text-to-Speech Functions ---
+        const ttsInput = document.getElementById('ttsInput');
+        const ttsAudio = document.getElementById('ttsAudio');
+        const ttsStatus = document.getElementById('ttsStatus');
+
+        async function playTTS() {
+            const text = ttsInput.value.trim();
+            if (!text) {
+                ttsStatus.innerText = "Please enter some text to speak.";
+                ttsStatus.style.display = 'block';
+                return;
+            }
+
+            ttsStatus.innerText = "Generating speech...";
+            ttsStatus.style.display = 'block';
+            ttsAudio.style.display = 'none'; // Hide audio controls while loading
+            ttsAudio.pause();
+            ttsAudio.src = '';
+
+            try {
+                const audioSourceUrl = `${CLOUD_RUN_URL}/generate-and-play-speech?text=${encodeURIComponent(text)}`;
+                ttsAudio.src = audioSourceUrl;
+                ttsAudio.style.display = 'block'; // Show audio controls
+                await ttsAudio.load(); // Load the audio
+                await ttsAudio.play(); // Attempt to play
+                ttsStatus.innerText = "Playing...";
+            } catch (error) {
+                console.error("Error playing TTS:", error);
+                ttsStatus.innerText = "Error playing speech. Please try again.";
+                ttsAudio.style.display = 'none'; // Hide audio controls on error
+            }
+        }
+
+        // --- Image Generation Functions ---
+        const imagePromptInput = document.getElementById('imagePromptInput');
+        const imageDisplay = document.getElementById('imageDisplay');
+        const imageStatus = document.getElementById('imageStatus');
+
+        async function generateImage() {
+            const prompt = imagePromptInput.value.trim();
+            if (!prompt) {
+                imageStatus.innerText = "Please enter a prompt to generate an image.";
+                imageStatus.style.display = 'block';
+                return;
+            }
+
+            imageStatus.innerText = "Generating image...";
+            imageStatus.style.display = 'block';
+            imageDisplay.innerHTML = `<p id="imageStatus" class="tool-status" style="display: block;">Generating image...</p>`; // Reset display
+
+            try {
+                const imageUrl = `${CLOUD_RUN_URL}/generate-and-display-image?prompt=${encodeURIComponent(prompt)}`;
+                
+                // Create a new image element
+                const imgElement = document.createElement('img');
+                imgElement.src = imageUrl;
+                imgElement.alt = "Generated Image";
+                imgElement.style.maxWidth = '100%';
+                imgElement.style.height = 'auto';
+                imgElement.style.borderRadius = '8px';
+                imgElement.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                imgElement.onload = () => {
+                    imageDisplay.innerHTML = ''; // Clear status
+                    imageDisplay.appendChild(imgElement);
+                    imageStatus.innerText = "Image generated successfully!";
+                    imageStatus.style.display = 'block';
+                    // Re-add status text since innerHTML clears it
+                    const finalStatus = document.createElement('p');
+                    finalStatus.id = "imageStatus";
+                    finalStatus.classList.add("tool-status");
+                    finalStatus.style.display = 'block';
+                    finalStatus.innerText = "Image generated successfully!";
+                    imageDisplay.appendChild(finalStatus);
+                };
+                imgElement.onerror = (e) => {
+                    console.error("Error loading generated image:", e);
+                    imageDisplay.innerHTML = `<p style="color: red;">Error generating image. Please try a different prompt.</p>`;
+                };
+
+            } catch (error) {
+                console.error("Error generating image:", error);
+                imageDisplay.innerHTML = `<p style="color: red;">Error generating image. Please try again. (${error.message})</p>`;
             }
         }
     </script>
